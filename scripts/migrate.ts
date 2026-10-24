@@ -1,11 +1,18 @@
 /* Applies Drizzle migrations to DATABASE_URL (or the local PGlite database). */
 import "./load-env";
-import { MIGRATIONS_DIR, openPglite } from "../lib/db/client";
+import { MIGRATIONS_DIR, migrationUrl, openPglite } from "../lib/db/client";
 
 async function main() {
-  const url = process.env.DATABASE_URL;
+  const url = migrationUrl();
   if (!url) {
-    if (process.env.VERCEL) throw new Error("DATABASE_URL is not set. Connect Neon Postgres in the Vercel Storage tab.");
+    if (process.env.VERCEL) {
+      // Don't fail the deployment: the app shows a clear error until a database is connected.
+      console.warn(
+        "WARNING: no Postgres connection string found (DATABASE_URL / POSTGRES_URL). Skipping migrations. " +
+          "Connect Neon Postgres in the Vercel project's Storage tab, then redeploy.",
+      );
+      return;
+    }
     const dir = process.env.PGLITE_DIR ?? ".data/pglite";
     await openPglite(dir); // migrates on open
     console.log(`Migrated local PGlite database (${dir})`);
