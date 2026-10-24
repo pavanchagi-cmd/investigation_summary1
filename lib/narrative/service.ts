@@ -167,8 +167,8 @@ export async function approve(c: Case, user: SessionUser) {
   }
   const approvedAt = new Date();
   const seconds = Math.max(0, Math.round((approvedAt.getTime() - c.startedAt.getTime()) / 1000));
-  await db.update(cases).set({ status: "approved", approvedAt, timeToDraftSeconds: seconds }).where(eq(cases.id, c.id));
   const d = diffDocs(versions[0].contentJson as PMDoc, final.contentJson as PMDoc);
+  await db.update(cases).set({ status: "approved", approvedAt, timeToDraftSeconds: seconds, pctAiKept: d.pctKept }).where(eq(cases.id, c.id));
   await logAudit({
     caseId: c.id,
     actorId: user.id,
@@ -199,7 +199,7 @@ export async function unlock(c: Case, user: SessionUser, reason: string) {
     contentText: latest.contentText,
     createdBy: user.id,
   });
-  await db.update(cases).set({ status: "drafting", approvedAt: null, timeToDraftSeconds: null }).where(eq(cases.id, c.id));
+  await db.update(cases).set({ status: "drafting", approvedAt: null, timeToDraftSeconds: null, pctAiKept: null }).where(eq(cases.id, c.id));
   await logAudit({
     caseId: c.id,
     actorId: user.id,

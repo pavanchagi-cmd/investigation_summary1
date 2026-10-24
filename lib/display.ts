@@ -1,15 +1,16 @@
 import { formatDate } from "./format";
 
-const regionNames = typeof Intl !== "undefined" && "DisplayNames" in Intl ? new Intl.DisplayNames(["en"], { type: "region" }) : null;
+// Fixed names (not Intl.DisplayNames, whose output differs between Node and browsers and breaks hydration).
+const COUNTRY_NAMES: Record<string, string> = {
+  AE: "United Arab Emirates", AU: "Australia", BD: "Bangladesh", BH: "Bahrain", CA: "Canada", CH: "Switzerland",
+  CN: "China", DE: "Germany", FR: "France", GB: "United Kingdom", HK: "Hong Kong", IN: "India", JP: "Japan",
+  KW: "Kuwait", LK: "Sri Lanka", MY: "Malaysia", NL: "Netherlands", OM: "Oman", QA: "Qatar", SA: "Saudi Arabia",
+  SG: "Singapore", US: "United States",
+};
 
 export function countryName(code: string | null | undefined): string {
   if (!code) return "";
-  if (/^X[A-Z]$/.test(code)) return code; // placeholder list codes
-  try {
-    return regionNames?.of(code) ?? code;
-  } catch {
-    return code;
-  }
+  return COUNTRY_NAMES[code] ?? code; // placeholder list codes (XA…) and others show as the code
 }
 
 function compactMoney(n: number) {

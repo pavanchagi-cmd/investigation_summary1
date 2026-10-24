@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { requireRole, ALL_ROLES } from "@/lib/auth/guard";
@@ -26,7 +26,10 @@ export default async function CasesPage() {
     .innerJoin(users, eq(users.id, cases.createdBy))
     .orderBy(desc(cases.startedAt))
     .limit(200);
-  const rows = user.role === "analyst" ? await base.where(eq(cases.createdBy, user.id)) : await base.where(eq(cases.syntheticHistory, false));
+  const rows =
+    user.role === "analyst"
+      ? await base.where(and(eq(cases.createdBy, user.id), eq(cases.syntheticHistory, false)))
+      : await base.where(eq(cases.syntheticHistory, false));
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-8 md:px-10">

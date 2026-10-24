@@ -29,7 +29,7 @@ export default async function NarrativePage({ params }: { params: Promise<{ id: 
   const [diff, audit, blockers] = await Promise.all([narrativeDiff(c.id), caseAudit(c.id, 5), approveBlockers(c)]);
   const latest = versions[versions.length - 1];
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
       <NarrativeWorkspace
         key={c.status}
         caseId={c.id}

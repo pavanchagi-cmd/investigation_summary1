@@ -75,6 +75,8 @@ export const cases = pgTable(
     startedAt: timestamp("started_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
     approvedAt: timestamp("approved_at", { withTimezone: true, mode: "date" }),
     timeToDraftSeconds: integer("time_to_draft_seconds"),
+    /** % of AI draft words kept in the approved narrative (stored on approval for the dashboard). */
+    pctAiKept: real("pct_ai_kept"),
     activeSeconds: integer("active_seconds").notNull().default(0),
     lastHeartbeatAt: timestamp("last_heartbeat_at", { withTimezone: true, mode: "date" }),
     reviewStart: date("review_start", { mode: "string" }),

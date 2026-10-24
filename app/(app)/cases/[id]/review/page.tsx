@@ -21,7 +21,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
   const [versions, diff, audit] = await Promise.all([listVersions(c.id), narrativeDiff(c.id), caseAudit(c.id, 2000, { includeAi: true })]);
   const latest = versions[versions.length - 1];
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
       <section className="min-w-0 rounded-xl border border-line bg-surface p-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-[18px] font-semibold">QA review · read-only</h2>

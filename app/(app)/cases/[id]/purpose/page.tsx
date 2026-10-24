@@ -52,7 +52,7 @@ export default async function PurposePage({ params }: { params: Promise<{ id: st
   });
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
       <Q5Cards caseId={c.id} items={items} readOnly={readOnly} />
       <RedFlagsPanel
         caseId={c.id}

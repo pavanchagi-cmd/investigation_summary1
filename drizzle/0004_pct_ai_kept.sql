@@ -1,0 +1,1 @@
+ALTER TABLE "cases" ADD COLUMN "pct_ai_kept" real;

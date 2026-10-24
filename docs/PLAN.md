@@ -14,7 +14,7 @@ Each milestone ends with lint, typecheck and unit tests passing and a push to `m
 - [x] Security headers (CSP with nonce, X-Frame-Options, Referrer-Policy)
 - [x] CI workflow (install, lint, typecheck, unit tests)
 - [x] `vercel-build` runs migrate + seed before `next build`
-- [ ] Vercel project imported and first deploy (owner, dashboard)
+- [ ] Vercel project imported and first deploy (owner, in the Vercel dashboard – not possible from the build sandbox)
 
 ## Milestone 2 · Cases and uploads
 - [x] Create case from alert number (configurable regex), timer persisted server-side
@@ -33,7 +33,7 @@ Each milestone ends with lint, typecheck and unit tests passing and a push to `m
 - [x] Four scenario rules (pure functions) with config-driven parameters
 - [x] Counterparty ranking (pure function), top 6, swap with reason
 - [x] Red flags panel with dismiss/restore, Q3 + Q4 screen, swap drawer
-- [ ] Admin config page (thresholds, weights, lists, baseline, retention, users' roles)
+- [x] Admin config page (thresholds, weights, lists, baseline, retention, users' roles)
 
 ## Milestone 5 · Q5 summaries
 - [x] Gemini call 3 for the top 6, cards with Agree / Edited / Needs RFI
@@ -47,7 +47,13 @@ Each milestone ends with lint, typecheck and unit tests passing and a push to `m
 - [x] Full audit log page; QA read-only review page
 
 ## Milestone 8 · Dashboard and polish
-- [ ] Dashboard metrics and charts
+- [x] Dashboard metrics and charts
 - [x] Seed generator + seed data for all four alerts
-- [ ] Playwright end-to-end tests
-- [ ] Accessibility pass, README
+- [x] Playwright end-to-end tests
+- [x] Accessibility pass, README
+
+## Verification log (24 Oct 2026)
+- Unit tests: 67 passing (`npm test`), lint and typecheck clean.
+- Playwright: 8 passing – all four demo alerts end to end, QA read-only, admin threshold change, 390 px layouts, axe scans.
+- Lighthouse accessibility: 100 on all five screens at 1280 px and in mobile emulation (390 px).
+- Not yet verified: a production deploy on Vercel and live Gemini calls (no key or Vercel access in the build sandbox).

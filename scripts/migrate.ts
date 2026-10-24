@@ -6,8 +6,9 @@ async function main() {
   const url = process.env.DATABASE_URL;
   if (!url) {
     if (process.env.VERCEL) throw new Error("DATABASE_URL is not set. Connect Neon Postgres in the Vercel Storage tab.");
-    await openPglite(process.env.PGLITE_DIR ?? ".data/pglite"); // migrates on open
-    console.log("Migrated local PGlite database (.data/pglite)");
+    const dir = process.env.PGLITE_DIR ?? ".data/pglite";
+    await openPglite(dir); // migrates on open
+    console.log(`Migrated local PGlite database (${dir})`);
     return;
   }
   const { default: postgres } = await import("postgres");

@@ -12,7 +12,7 @@ import { SourceChip } from "@/components/case/document-preview";
 import { useSave } from "@/components/case/save-status";
 import { TransactionsDialog } from "@/components/case/transactions-dialog";
 import { api } from "@/lib/client/api";
-import { formatAmount } from "@/lib/format";
+import { formatAmount, formatDate } from "@/lib/format";
 import type { FieldView } from "@/lib/cases/fields";
 import type { DocumentSummary } from "@/lib/documents/service";
 import type { IssueRow } from "@/lib/documents/issues";
@@ -63,7 +63,7 @@ export function IntakeScreen(props: {
   }, [anyPending, router]);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_400px]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_400px]">
       <div className="min-w-0 space-y-6">
         <Q1Card {...props} />
         <Q2Card {...props} />
@@ -116,7 +116,7 @@ function Q1Card({ caseId, alertNumber, readOnly, subAlerts, fields }: Parameters
       ) : null}
       {alertDate?.value ? (
         <p className="mt-2 text-[13px] text-muted">
-          Alert generated <span className="font-mono">{String(alertDate.value)}</span> <SourceChip source={alertDate.sourceRef} />
+          Alert generated <span className="font-mono">{formatDate(String(alertDate.value))}</span> <SourceChip source={alertDate.sourceRef} />
         </p>
       ) : null}
 
@@ -274,7 +274,7 @@ function Q2Card({ caseId, readOnly, fields, reviewStart, reviewEnd, stats }: Par
   return (
     <Card>
       <CardHeader title="Q2 · Review period" aside={startField ? <AiDraftBadge state={state} /> : null} />
-      <div className="grid gap-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
         <div>
           <Label htmlFor="q2-start">Start date</Label>
           <Input
@@ -299,7 +299,7 @@ function Q2Card({ caseId, readOnly, fields, reviewStart, reviewEnd, stats }: Par
             onBlur={() => save(start, end)}
           />
         </div>
-        <div className="pb-1">
+        <div className="min-w-0 pb-1">
           <SourceChip source={startField?.sourceRef} />
           <div className={`mt-1 text-[12.5px] ${valid ? "text-ok" : "text-muted"}`}>
             {valid ? "Start ≤ end ✓" : start || end ? "Set both dates" : "Not provided in documents"}

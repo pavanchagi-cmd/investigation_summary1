@@ -189,7 +189,7 @@ function Q4Card({ caseId, readOnly, counterparties, weights, ownAccount, baseCcy
   const [swapTarget, setSwapTarget] = React.useState<{ row: CounterpartyView; position: number } | null>(null);
 
   return (
-    <div className={cn("grid gap-6", swapTarget ? "xl:grid-cols-[minmax(0,1fr)_340px]" : "")}>
+    <div className={cn("grid grid-cols-1 gap-6", swapTarget ? "xl:grid-cols-[minmax(0,1fr)_340px]" : "")}>
       <Card className="min-w-0">
         <CardHeader
           title="Q4 · Top 6 counterparties"

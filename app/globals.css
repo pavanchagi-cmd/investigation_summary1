@@ -108,3 +108,9 @@ body {
   color: var(--color-risk);
   text-decoration: line-through;
 }
+
+/* Visually hidden (absolute) labels inside scrolling tables must not escape the scroll box. */
+.overflow-x-auto,
+.overflow-auto {
+  position: relative;
+}

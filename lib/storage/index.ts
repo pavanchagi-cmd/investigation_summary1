@@ -22,7 +22,7 @@ export const ALLOWED_TYPES: Record<string, string> = {
 };
 
 const LOCAL_PREFIX = "local://";
-const LOCAL_DIR = path.join(process.cwd(), ".data", "uploads");
+const LOCAL_DIR = path.resolve(process.env.LOCAL_UPLOAD_DIR ?? path.join(process.cwd(), ".data", "uploads"));
 
 export function storageMode(): "blob" | "local" {
   if (process.env.BLOB_READ_WRITE_TOKEN) return "blob";
