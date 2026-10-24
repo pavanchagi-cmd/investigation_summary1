@@ -1,0 +1,22 @@
+{
+  "page_count": null,
+  "prior_alerts": {
+    "value": 0,
+    "source": {
+      "file": "prior_cases_CIF10060331.docx",
+      "page": null,
+      "row": null
+    },
+    "confidence": 0.97
+  },
+  "prior_sars": {
+    "value": 0,
+    "source": {
+      "file": "prior_cases_CIF10060331.docx",
+      "page": null,
+      "row": null
+    },
+    "confidence": 0.97
+  },
+  "cases": []
+}

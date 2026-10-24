@@ -197,5 +197,9 @@ export const SECTION_HEADINGS: Record<SectionKey, string> = {
 };
 
 export const NarrativeSection = z.object({ key: z.enum(SECTION_KEYS), heading: z.string(), body: z.string() });
-export const NarrativeOutput = z.object({ sections: z.array(NarrativeSection) });
+export const NarrativeOutput = z
+  .object({ sections: z.array(NarrativeSection) })
+  .refine((o) => SECTION_KEYS.every((k) => o.sections.filter((s) => s.key === k).length === 1), {
+    message: `Return exactly one section for each key: ${SECTION_KEYS.join(", ")}`,
+  });
 export type NarrativeOutput = z.infer<typeof NarrativeOutput>;

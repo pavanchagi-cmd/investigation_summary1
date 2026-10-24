@@ -1,0 +1,39 @@
+{
+  "page_count": 1,
+  "response_date": {
+    "value": "2026-10-06",
+    "source": {
+      "file": "rfi_response_CIF10060331.jpg",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.92
+  },
+  "respondent": {
+    "value": "Proprietor, Marigold Wholesale Pvt Ltd",
+    "source": {
+      "file": "rfi_response_CIF10060331.jpg",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.92
+  },
+  "summary": {
+    "value": "Client says round payments are supplier advances.",
+    "source": {
+      "file": "rfi_response_CIF10060331.jpg",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.92
+  },
+  "items": [
+    {
+      "question": "Why are many supplier payments in exact thousands?",
+      "answer": "Suppliers ask for advances in round amounts; balances settled later.",
+      "counterparty": null,
+      "page": 1,
+      "confidence": 0.92
+    }
+  ]
+}

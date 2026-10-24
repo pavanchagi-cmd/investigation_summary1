@@ -15,6 +15,20 @@
       "when": 1792827953370,
       "tag": "0001_parse_issue_fixes",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792828319782,
+      "tag": "0002_counterparty_swaps",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792829061782,
+      "tag": "0003_analysis_meta",
+      "breakpoints": true
     }
   ]
 }

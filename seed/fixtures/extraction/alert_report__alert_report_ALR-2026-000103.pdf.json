@@ -1,0 +1,91 @@
+{
+  "page_count": 2,
+  "alert_number": {
+    "value": "ALR-2026-000103",
+    "source": {
+      "file": "alert_report_ALR-2026-000103.pdf",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.99
+  },
+  "alert_date": {
+    "value": "2026-10-02",
+    "source": {
+      "file": "alert_report_ALR-2026-000103.pdf",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "review_start": {
+    "value": "2026-07-01",
+    "source": {
+      "file": "alert_report_ALR-2026-000103.pdf",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "review_end": {
+    "value": "2026-09-30",
+    "source": {
+      "file": "alert_report_ALR-2026-000103.pdf",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "lookback_days": {
+    "value": 92,
+    "source": {
+      "file": "alert_report_ALR-2026-000103.pdf",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "client_name": {
+    "value": "Marigold Wholesale Pvt Ltd",
+    "source": {
+      "file": "alert_report_ALR-2026-000103.pdf",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "client_id": {
+    "value": "10060331",
+    "source": {
+      "file": "alert_report_ALR-2026-000103.pdf",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "accounts": {
+    "value": [
+      {
+        "account_number": "50210001103",
+        "opened_date": "2014-12-02"
+      }
+    ],
+    "source": {
+      "file": "alert_report_ALR-2026-000103.pdf",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "sub_alerts": [
+    {
+      "sub_alert_number": "ALR-2026-000103-01",
+      "scenario": "round_dollar",
+      "rule_id": "RD-02",
+      "threshold": "40%",
+      "trigger_details": "40% or more of outgoing transactions in multiples of 1,000",
+      "triggering_txn_count": 53,
+      "page": 2
+    }
+  ]
+}

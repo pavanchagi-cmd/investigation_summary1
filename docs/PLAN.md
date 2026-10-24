@@ -30,24 +30,24 @@ Each milestone ends with lint, typecheck and unit tests passing and a push to `m
 - [x] Pre-fill Q1–Q3 with sources; review-period filter and stats
 
 ## Milestone 4 · Rules and ranking
-- [ ] Four scenario rules (pure functions) with config-driven parameters
-- [ ] Counterparty ranking (pure function), top 6, swap with reason
-- [ ] Red flags panel with dismiss/restore, Q3 + Q4 screen, swap drawer
+- [x] Four scenario rules (pure functions) with config-driven parameters
+- [x] Counterparty ranking (pure function), top 6, swap with reason
+- [x] Red flags panel with dismiss/restore, Q3 + Q4 screen, swap drawer
 - [ ] Admin config page (thresholds, weights, lists, baseline, retention, users' roles)
 
 ## Milestone 5 · Q5 summaries
-- [ ] Gemini call 3 for the top 6, cards with Agree / Edited / Needs RFI
+- [x] Gemini call 3 for the top 6, cards with Agree / Edited / Needs RFI
 
 ## Milestone 6 · Narrative
-- [ ] Prompt B, Gemini call 4, TipTap editor, versioning, autosave, diff, % kept
-- [ ] Regenerate section, disposition, approve / unlock
+- [x] Prompt B, Gemini call 4, TipTap editor, versioning, autosave, diff, % kept
+- [x] Regenerate section, disposition, approve / unlock
 
 ## Milestone 7 · Export, audit, QA view
-- [ ] Word, PDF, copy text exports
-- [ ] Full audit log page; QA read-only review page
+- [x] Word, PDF, copy text exports
+- [x] Full audit log page; QA read-only review page
 
 ## Milestone 8 · Dashboard and polish
 - [ ] Dashboard metrics and charts
-- [ ] Seed generator + seed data for all four alerts
+- [x] Seed generator + seed data for all four alerts
 - [ ] Playwright end-to-end tests
 - [ ] Accessibility pass, README

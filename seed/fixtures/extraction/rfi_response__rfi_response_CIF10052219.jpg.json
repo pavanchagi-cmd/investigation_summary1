@@ -1,0 +1,39 @@
+{
+  "page_count": 1,
+  "response_date": {
+    "value": "2026-10-07",
+    "source": {
+      "file": "rfi_response_CIF10052219.jpg",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.92
+  },
+  "respondent": {
+    "value": "Director, Larkspur Commodities Pvt Ltd",
+    "source": {
+      "file": "rfi_response_CIF10052219.jpg",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.92
+  },
+  "summary": {
+    "value": "Client describes the flows as back-to-back trades; no contracts were provided.",
+    "source": {
+      "file": "rfi_response_CIF10052219.jpg",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.92
+  },
+  "items": [
+    {
+      "question": "Why are receipts from Orchid Exports FZE paid on to Bayline Traders Ltd within days?",
+      "answer": "Back-to-back trade: we buy from Bayline and sell to Orchid.",
+      "counterparty": "Orchid Exports FZE",
+      "page": 1,
+      "confidence": 0.92
+    }
+  ]
+}

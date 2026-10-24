@@ -83,6 +83,8 @@ export const cases = pgTable(
     rationale: text(),
     needsAnalysis: boolean("needs_analysis").notNull().default(true),
     analysedAt: timestamp("analysed_at", { withTimezone: true, mode: "date" }),
+    /** Figures from the last analysis run (client total flow, own-account transfers excluded from ranking). */
+    analysisMeta: jsonb("analysis_meta").$type<{ clientTotalFlow: number; ownAccount: { count: number; total: number } }>(),
     /** Historical cases generated only to populate the demo dashboard. */
     syntheticHistory: boolean("synthetic_history").notNull().default(false),
   },
@@ -243,6 +245,8 @@ export const counterparties = pgTable(
     rank: integer().notNull(),
     inTop6: boolean("in_top6").notNull().default(false),
     swappedReason: text("swapped_reason"),
+    /** Key of the counterparty this one replaced in the top 6 (set on the swapped-in row). */
+    swappedFor: text("swapped_for"),
     /** Kept when a re-analysis no longer finds the counterparty in the period. */
     stale: boolean().notNull().default(false),
   },

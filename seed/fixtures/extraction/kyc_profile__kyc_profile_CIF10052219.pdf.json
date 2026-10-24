@@ -1,0 +1,162 @@
+{
+  "page_count": 3,
+  "client_name": {
+    "value": "Larkspur Commodities Pvt Ltd",
+    "source": {
+      "file": "kyc_profile_CIF10052219.pdf",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "client_id": {
+    "value": "10052219",
+    "source": {
+      "file": "kyc_profile_CIF10052219.pdf",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "entity_type": {
+    "value": "Private company",
+    "source": {
+      "file": "kyc_profile_CIF10052219.pdf",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "incorporation_date": {
+    "value": "2017-02-03",
+    "source": {
+      "file": "kyc_profile_CIF10052219.pdf",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "incorporation_country": {
+    "value": "IN",
+    "source": {
+      "file": "kyc_profile_CIF10052219.pdf",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "nature_of_business": {
+    "value": "Wholesale trading of agricultural commodities",
+    "source": {
+      "file": "kyc_profile_CIF10052219.pdf",
+      "page": 2,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "industry_code": {
+    "value": "G4620",
+    "source": {
+      "file": "kyc_profile_CIF10052219.pdf",
+      "page": 2,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "declared_turnover": {
+    "value": {
+      "amount": 4000000,
+      "currency": "USD"
+    },
+    "source": {
+      "file": "kyc_profile_CIF10052219.pdf",
+      "page": 2,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "expected_activity": {
+    "value": {
+      "monthly_volume": 110,
+      "monthly_value": 600000,
+      "currency": "USD",
+      "countries": [
+        "IN",
+        "AE"
+      ],
+      "products": [
+        "NEFT",
+        "wires"
+      ]
+    },
+    "source": {
+      "file": "kyc_profile_CIF10052219.pdf",
+      "page": 3,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "accounts": {
+    "value": null,
+    "source": {
+      "file": "kyc_profile_CIF10052219.pdf",
+      "page": null,
+      "row": null
+    },
+    "confidence": 0
+  },
+  "risk_rating": {
+    "value": "High",
+    "source": {
+      "file": "kyc_profile_CIF10052219.pdf",
+      "page": 3,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "pep": {
+    "value": "No",
+    "source": {
+      "file": "kyc_profile_CIF10052219.pdf",
+      "page": 3,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "sanctions": {
+    "value": "No match",
+    "source": {
+      "file": "kyc_profile_CIF10052219.pdf",
+      "page": 3,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "adverse_media": {
+    "value": "None",
+    "source": {
+      "file": "kyc_profile_CIF10052219.pdf",
+      "page": 3,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "prior_alerts": {
+    "value": 0,
+    "source": {
+      "file": "kyc_profile_CIF10052219.pdf",
+      "page": 3,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "prior_sars": {
+    "value": 0,
+    "source": {
+      "file": "kyc_profile_CIF10052219.pdf",
+      "page": 3,
+      "row": null
+    },
+    "confidence": 0.98
+  }
+}

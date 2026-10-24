@@ -1,0 +1,53 @@
+{
+  "page_count": 1,
+  "response_date": {
+    "value": "2026-10-09",
+    "source": {
+      "file": "rfi_response_scan.jpg",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.92
+  },
+  "respondent": {
+    "value": "Finance Manager, Kestrel Trading Pvt Ltd",
+    "source": {
+      "file": "rfi_response_scan.jpg",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.92
+  },
+  "summary": {
+    "value": "Client states Harbourline is its freight forwarder, Aurelia payments were for consulting without a signed contract, and Pinewood payments were split advances requested by the supplier.",
+    "source": {
+      "file": "rfi_response_scan.jpg",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.92
+  },
+  "items": [
+    {
+      "question": "Explain the relationship with Harbourline Logistics FZE.",
+      "answer": "Harbourline is our freight forwarder for shipments to the Gulf. Some customers pay freight through them and they pass it on.",
+      "counterparty": "Harbourline Logistics FZE",
+      "page": 1,
+      "confidence": 0.92
+    },
+    {
+      "question": "What were the payments to Aurelia Holdings S.A. for?",
+      "answer": "Consulting services for market entry. Contract not yet signed.",
+      "counterparty": "Aurelia Holdings S.A.",
+      "page": 1,
+      "confidence": 0.92
+    },
+    {
+      "question": "Why were seven payments of just under USD 10,000 made to Pinewood Textiles in August?",
+      "answer": "Advance payments for fabric bags, paid in parts as requested by the supplier.",
+      "counterparty": "Pinewood Textiles",
+      "page": 1,
+      "confidence": 0.92
+    }
+  ]
+}

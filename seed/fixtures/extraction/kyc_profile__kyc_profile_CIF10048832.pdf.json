@@ -1,0 +1,162 @@
+{
+  "page_count": 3,
+  "client_name": {
+    "value": "Kestrel Trading Pvt Ltd",
+    "source": {
+      "file": "kyc_profile_CIF10048832.pdf",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "client_id": {
+    "value": "10048832",
+    "source": {
+      "file": "kyc_profile_CIF10048832.pdf",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "entity_type": {
+    "value": "Private company",
+    "source": {
+      "file": "kyc_profile_CIF10048832.pdf",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "incorporation_date": {
+    "value": "2019-03-14",
+    "source": {
+      "file": "kyc_profile_CIF10048832.pdf",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "incorporation_country": {
+    "value": "IN",
+    "source": {
+      "file": "kyc_profile_CIF10048832.pdf",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "nature_of_business": {
+    "value": "Import/export of industrial metals and scrap",
+    "source": {
+      "file": "kyc_profile_CIF10048832.pdf",
+      "page": 2,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "industry_code": {
+    "value": null,
+    "source": {
+      "file": "kyc_profile_CIF10048832.pdf",
+      "page": null,
+      "row": null
+    },
+    "confidence": 0
+  },
+  "declared_turnover": {
+    "value": {
+      "amount": 6000000,
+      "currency": "USD"
+    },
+    "source": {
+      "file": "kyc_profile_CIF10048832.pdf",
+      "page": 2,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "expected_activity": {
+    "value": {
+      "monthly_volume": 120,
+      "monthly_value": 500000,
+      "currency": "USD",
+      "countries": [
+        "IN",
+        "AE",
+        "SG"
+      ],
+      "products": [
+        "wires"
+      ]
+    },
+    "source": {
+      "file": "kyc_profile_CIF10048832.pdf",
+      "page": 3,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "accounts": {
+    "value": null,
+    "source": {
+      "file": "kyc_profile_CIF10048832.pdf",
+      "page": null,
+      "row": null
+    },
+    "confidence": 0
+  },
+  "risk_rating": {
+    "value": "High",
+    "source": {
+      "file": "kyc_profile_CIF10048832.pdf",
+      "page": 3,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "pep": {
+    "value": "No",
+    "source": {
+      "file": "kyc_profile_CIF10048832.pdf",
+      "page": 3,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "sanctions": {
+    "value": "No match",
+    "source": {
+      "file": "kyc_profile_CIF10048832.pdf",
+      "page": 3,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "adverse_media": {
+    "value": "1 hit – 2024 customs dispute (closed)",
+    "source": {
+      "file": "kyc_profile_CIF10048832.pdf",
+      "page": 3,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "prior_alerts": {
+    "value": 2,
+    "source": {
+      "file": "kyc_profile_CIF10048832.pdf",
+      "page": 3,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "prior_sars": {
+    "value": 0,
+    "source": {
+      "file": "kyc_profile_CIF10048832.pdf",
+      "page": 3,
+      "row": null
+    },
+    "confidence": 0.98
+  }
+}

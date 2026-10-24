@@ -1,0 +1,91 @@
+{
+  "page_count": 2,
+  "alert_number": {
+    "value": "ALR-2026-000102",
+    "source": {
+      "file": "alert_report_ALR-2026-000102.pdf",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.99
+  },
+  "alert_date": {
+    "value": "2026-10-02",
+    "source": {
+      "file": "alert_report_ALR-2026-000102.pdf",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "review_start": {
+    "value": "2026-07-01",
+    "source": {
+      "file": "alert_report_ALR-2026-000102.pdf",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "review_end": {
+    "value": "2026-09-30",
+    "source": {
+      "file": "alert_report_ALR-2026-000102.pdf",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "lookback_days": {
+    "value": 92,
+    "source": {
+      "file": "alert_report_ALR-2026-000102.pdf",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "client_name": {
+    "value": "Larkspur Commodities Pvt Ltd",
+    "source": {
+      "file": "alert_report_ALR-2026-000102.pdf",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "client_id": {
+    "value": "10052219",
+    "source": {
+      "file": "alert_report_ALR-2026-000102.pdf",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "accounts": {
+    "value": [
+      {
+        "account_number": "50210001102",
+        "opened_date": "2017-03-01"
+      }
+    ],
+    "source": {
+      "file": "alert_report_ALR-2026-000102.pdf",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.98
+  },
+  "sub_alerts": [
+    {
+      "sub_alert_number": "ALR-2026-000102-01",
+      "scenario": "pattern_of_funds",
+      "rule_id": "PF-11",
+      "threshold": "±5%",
+      "trigger_details": "in-and-out within 3 days, ±5% amount",
+      "triggering_txn_count": 12,
+      "page": 2
+    }
+  ]
+}

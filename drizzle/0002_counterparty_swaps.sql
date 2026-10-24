@@ -1,0 +1,1 @@
+ALTER TABLE "counterparties" ADD COLUMN "swapped_for" text;

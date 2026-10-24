@@ -1,0 +1,39 @@
+{
+  "page_count": null,
+  "prior_alerts": {
+    "value": 2,
+    "source": {
+      "file": "prior_cases.docx",
+      "page": null,
+      "row": null
+    },
+    "confidence": 0.97
+  },
+  "prior_sars": {
+    "value": 0,
+    "source": {
+      "file": "prior_cases.docx",
+      "page": null,
+      "row": null
+    },
+    "confidence": 0.97
+  },
+  "cases": [
+    {
+      "alert_number": "ALR-2025-000488",
+      "date": "2025-03-11",
+      "scenario": "Large Amount Transaction",
+      "outcome": "Closed – no further action",
+      "summary": "Single receipt of USD 240,000 from a scrap buyer; invoice and bill of lading provided.",
+      "page": null
+    },
+    {
+      "alert_number": "ALR-2025-001207",
+      "date": "2025-11-20",
+      "scenario": "Round Dollar Transaction",
+      "outcome": "Closed – no further action",
+      "summary": "Round-amount payments to a metals supplier explained by fixed-price contracts.",
+      "page": null
+    }
+  ]
+}

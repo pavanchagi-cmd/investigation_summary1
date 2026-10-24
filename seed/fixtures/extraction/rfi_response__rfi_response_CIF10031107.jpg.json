@@ -1,0 +1,46 @@
+{
+  "page_count": 1,
+  "response_date": {
+    "value": "2026-10-08",
+    "source": {
+      "file": "rfi_response_CIF10031107.jpg",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.92
+  },
+  "respondent": {
+    "value": "Accounts Head, Northwind Castings Pvt Ltd",
+    "source": {
+      "file": "rfi_response_CIF10031107.jpg",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.92
+  },
+  "summary": {
+    "value": "Client explains both large transactions as a documented export order and an equipment deposit.",
+    "source": {
+      "file": "rfi_response_CIF10031107.jpg",
+      "page": 1,
+      "row": null
+    },
+    "confidence": 0.92
+  },
+  "items": [
+    {
+      "question": "What was the receipt of USD 64,500 from Ironclad Engineering Ltd for?",
+      "answer": "Export order IE-2291 for pump housings, invoice attached.",
+      "counterparty": "Ironclad Engineering Ltd",
+      "page": 1,
+      "confidence": 0.92
+    },
+    {
+      "question": "What was the payment of USD 31,250 to Precision Lathe Systems for?",
+      "answer": "Deposit on a CNC lathe; purchase order attached.",
+      "counterparty": "Precision Lathe Systems",
+      "page": 1,
+      "confidence": 0.92
+    }
+  ]
+}
