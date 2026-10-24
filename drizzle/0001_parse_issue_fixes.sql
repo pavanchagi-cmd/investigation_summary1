@@ -1,0 +1,1 @@
+ALTER TABLE "parse_issues" ADD COLUMN "fixed_values" jsonb;

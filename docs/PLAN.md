@@ -8,7 +8,7 @@ Each milestone ends with lint, typecheck and unit tests passing and a push to `m
 ## Milestone 1 · Foundation
 - [x] Scaffold Next.js 15 (App Router, TypeScript strict, Tailwind v4, ESLint)
 - [x] Design tokens and IBM Plex fonts (self-hosted)
-- [x] App shell (dark top bar, nav, case timer slot, user + role); stepper ships with milestone 2
+- [x] App shell (dark top bar, nav, case timer, user + role) and four-step stepper
 - [x] Auth.js v5 credentials provider, JWT sessions, roles analyst / qa / admin, `requireRole`
 - [x] Drizzle schema for the 13 tables + migrations; Postgres (Neon) in prod, PGlite locally
 - [x] Security headers (CSP with nonce, X-Frame-Options, Referrer-Policy)
@@ -17,17 +17,17 @@ Each milestone ends with lint, typecheck and unit tests passing and a push to `m
 - [ ] Vercel project imported and first deploy (owner, dashboard)
 
 ## Milestone 2 · Cases and uploads
-- [ ] Create case from alert number (configurable regex), timer persisted server-side
-- [ ] Case list
-- [ ] Upload token route (Vercel Blob client upload, private); local-disk fallback for dev/tests
-- [ ] Register document, rule-based type detection (+ Gemini fallback), type correction re-parses
-- [ ] Documents panel on screen 1
+- [x] Create case from alert number (configurable regex), timer persisted server-side
+- [x] Case list
+- [x] Upload token route (Vercel Blob client upload, private); local-disk fallback for dev/tests
+- [x] Register document, rule-based type detection (+ Gemini fallback), type correction re-parses
+- [x] Documents panel on screen 1
 
 ## Milestone 3 · Parsing
-- [ ] Header synonym mapping + mapping dialog when required columns are missing
-- [ ] Date / amount / direction / type / currency / country validation, parse issues (fix / exclude)
-- [ ] Gemini extraction for PDF, DOCX, images (inline data, page references)
-- [ ] Pre-fill Q1–Q3 with sources; review-period filter and stats
+- [x] Header synonym mapping + mapping dialog when required columns are missing
+- [x] Date / amount / direction / type / currency / country validation, parse issues (fix / exclude)
+- [x] Gemini extraction for PDF, DOCX, images (inline data, page references)
+- [x] Pre-fill Q1–Q3 with sources; review-period filter and stats
 
 ## Milestone 4 · Rules and ranking
 - [ ] Four scenario rules (pure functions) with config-driven parameters

@@ -188,6 +188,8 @@ export const parseIssues = pgTable(
     problem: text().notNull(),
     /** The full raw row so a fix can re-validate it. */
     rawRow: jsonb("raw_row").$type<Record<string, unknown>>(),
+    /** Analyst corrections (field → value) applied when the row is re-validated. */
+    fixedValues: jsonb("fixed_values").$type<Record<string, string>>(),
     resolution: issueResolutionEnum().notNull().default("open"),
     resolutionReason: text("resolution_reason"),
     resolvedBy: integer("resolved_by").references(() => users.id),

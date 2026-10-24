@@ -4,9 +4,9 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   resolve: {
     alias: {
-      "@": path.resolve(__dirname),
+      "@": import.meta.dirname,
       // Server-only guard is a build-time check for Next; tests import server modules directly.
-      "server-only": path.resolve(__dirname, "tests/helpers/empty.ts"),
+      "server-only": path.join(import.meta.dirname, "tests/helpers/empty.ts"),
     },
   },
   test: {
