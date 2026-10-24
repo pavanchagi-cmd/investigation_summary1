@@ -1,0 +1,110 @@
+@import "tailwindcss";
+
+/* Design tokens from the attached design (spec section 3). Light theme only, per the design. */
+@theme {
+  --color-ink: #16202b;
+  --color-muted: #4a5565;
+  --color-line: #d9dee5;
+  --color-page: #f4f6f8;
+  --color-surface: #ffffff;
+  --color-accent: #1f4fd1;
+  --color-accent-soft: #e8eefc;
+  --color-ai: #7a4100;
+  --color-ai-soft: #fff1de;
+  --color-risk: #9a1c12;
+  --color-risk-soft: #fdecea;
+  --color-ok: #1e6b3a;
+  --color-ok-soft: #e7f4ec;
+  --color-topbar: #16202b;
+
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+  --font-serif: var(--font-plex-serif), ui-serif, Georgia, serif;
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  background: var(--color-page);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Narrative editor (TipTap / ProseMirror) */
+.narrative-doc {
+  font-family: var(--font-serif);
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--color-ink);
+}
+.narrative-doc:focus {
+  outline: none;
+}
+.narrative-doc h2 {
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+  margin: 1.6em 0 0.5em;
+}
+.narrative-doc h2:first-child {
+  margin-top: 0;
+}
+.narrative-doc h3 {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  margin: 1.2em 0 0.4em;
+}
+.narrative-doc p {
+  margin: 0 0 0.8em;
+}
+.narrative-doc ul {
+  list-style: disc;
+  padding-left: 1.4em;
+  margin: 0 0 0.8em;
+}
+.narrative-doc ol {
+  list-style: decimal;
+  padding-left: 1.4em;
+  margin: 0 0 0.8em;
+}
+.narrative-doc table {
+  border-collapse: collapse;
+  margin: 0 0 1em;
+  width: 100%;
+  font-family: var(--font-sans);
+  font-size: 13px;
+}
+.narrative-doc td,
+.narrative-doc th {
+  border: 1px solid var(--color-line);
+  padding: 4px 8px;
+  vertical-align: top;
+}
+.narrative-doc th {
+  background: var(--color-page);
+  font-weight: 600;
+}
+
+.diff-ins {
+  background: var(--color-ok-soft);
+  color: var(--color-ok);
+  text-decoration: underline;
+  text-decoration-color: var(--color-ok);
+  text-underline-offset: 3px;
+}
+.diff-del {
+  background: var(--color-risk-soft);
+  color: var(--color-risk);
+  text-decoration: line-through;
+}

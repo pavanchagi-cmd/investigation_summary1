@@ -1,0 +1,38 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# testing
+/coverage
+/playwright-report
+/test-results
+/blob-report
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# local databases and uploads (PGlite / local blob fallback)
+/.data
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+
+# env files – never commit secrets; only the names template is tracked
+.env*
+!.env.example
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
