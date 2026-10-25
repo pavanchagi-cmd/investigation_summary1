@@ -10,7 +10,7 @@ a time-to-draft dashboard.
 analyst action. Every AI value is labelled "AI draft – analyst to verify", carries a source, and is stored next to the
 analyst's edit.
 
-Production URL: _not deployed yet – add it here after the first Vercel deployment._
+Production URL: https://investigationsummary1.vercel.app
 
 ## Screens
 

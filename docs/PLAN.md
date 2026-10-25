@@ -14,7 +14,7 @@ Each milestone ends with lint, typecheck and unit tests passing and a push to `m
 - [x] Security headers (CSP with nonce, X-Frame-Options, Referrer-Policy)
 - [x] CI workflow (install, lint, typecheck, unit tests)
 - [x] `vercel-build` runs migrate + seed before `next build`
-- [ ] Vercel project imported and first deploy (owner, in the Vercel dashboard – not possible from the build sandbox)
+- [x] Vercel project imported and deployed (https://investigationsummary1.vercel.app, 25 Oct 2026; login verified by the owner)
 
 ## Milestone 2 · Cases and uploads
 - [x] Create case from alert number (configurable regex), timer persisted server-side
@@ -56,4 +56,4 @@ Each milestone ends with lint, typecheck and unit tests passing and a push to `m
 - Unit tests: 67 passing (`npm test`), lint and typecheck clean.
 - Playwright: 8 passing – all four demo alerts end to end, QA read-only, admin threshold change, 390 px layouts, axe scans.
 - Lighthouse accessibility: 100 on all five screens at 1280 px and in mobile emulation (390 px).
-- Not yet verified: a production deploy on Vercel and live Gemini calls (no key or Vercel access in the build sandbox).
+- Production deploy live and login verified by the owner (25 Oct 2026). Live Gemini calls not yet verified.
