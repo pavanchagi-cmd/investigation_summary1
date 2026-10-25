@@ -3,6 +3,7 @@ import { expect, type Page } from "@playwright/test";
 export const PASSWORD = "e2e-password";
 
 export async function login(page: Page, email: string) {
+  await page.context().clearCookies();
   await page.goto("/login");
   await page.fill("#email", email);
   await page.fill("#password", PASSWORD);
@@ -11,8 +12,12 @@ export async function login(page: Page, email: string) {
 }
 
 export async function logout(page: Page) {
+  // Let in-flight refreshes finish first: a request that started before sign-out can renew the
+  // session cookie after it, leaving the browser signed in.
+  await page.waitForLoadState("networkidle");
   await page.getByRole("button", { name: "Sign out" }).click();
   await page.waitForURL(/\/login/);
+  await expect(page.locator("#email")).toBeVisible();
 }
 
 /** Creates a case for a demo alert and attaches its synthetic documents; waits until parsing finishes. */
