@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Upload } from "lucide-react";
+import { Loader2, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Select } from "@/components/ui/form";
@@ -12,7 +12,7 @@ import { DOC_TYPE_LABELS } from "@/lib/parsing/detect";
 import type { DocumentSummary } from "@/lib/documents/service";
 import type { IssueRow } from "@/lib/documents/issues";
 import { cn } from "@/lib/utils";
-import { ExcludeDialog, FixRowsDialog, MappingDialog, CurrencyDialog } from "./issue-dialogs";
+import { ExcludeDialog, FixRowsDialog, MappingDialog, CurrencyDialog, RemoveDocumentDialog } from "./issue-dialogs";
 
 const ACCEPT = ".pdf,.xlsx,.xls,.csv,.docx,.png,.jpg,.jpeg";
 const ACCEPTED_EXT = new Set(["pdf", "xlsx", "xls", "csv", "docx", "png", "jpg", "jpeg"]);
@@ -192,7 +192,10 @@ export function DocumentsPanel({
             <li key={d.id} className={cn("rounded-lg border p-3", hasProblem ? "border-ai/50 bg-ai-soft/40" : "border-line")}>
               <div className="flex items-start justify-between gap-3">
                 <span className="break-all font-mono text-[13px]">{d.fileName}</span>
-                <span className={cn("shrink-0 text-[12.5px] font-medium", st.tone)}>{st.text}</span>
+                <span className="flex shrink-0 items-center gap-1">
+                  <span className={cn("text-[12.5px] font-medium", st.tone)}>{st.text}</span>
+                  {!readOnly ? <RemoveDocumentDialog doc={d} trigger={<Trash2 />} /> : null}
+                </span>
               </div>
               <Select
                 aria-label={`Document type for ${d.fileName}`}

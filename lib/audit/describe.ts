@@ -25,6 +25,8 @@ export function describeAudit(e: Entry): string {
       return `${who} changed the alert number: ${b.alertNumber} → ${a.alertNumber}`;
     case "document_uploaded":
       return `${who} uploaded ${a.fileName}`;
+    case "document_removed":
+      return `${who} removed ${b.fileName}${a.transactions ? ` (${a.transactions} transactions)` : ""}`;
     case "document_type_changed":
       return `${who} changed a document type: ${b.type ?? "undetected"} → ${a.type}`;
     case "document_reparsed":

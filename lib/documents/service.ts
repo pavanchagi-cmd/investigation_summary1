@@ -2,11 +2,13 @@ import "server-only";
 import { after } from "next/server";
 import { and, asc, eq, sql } from "drizzle-orm";
 import { getDb } from "@/lib/db";
-import { documents, parseIssues, type DocType } from "@/lib/db/schema";
+import { caseFields, cases, documents, parseIssues, subAlerts, transactions, type DocType } from "@/lib/db/schema";
 import { logAudit } from "@/lib/audit/log";
 import { HttpError } from "@/lib/http";
-import { MAX_UPLOAD_BYTES, allowedMime, isOwnStorageUrl, scanUpload } from "@/lib/storage";
+import { MAX_UPLOAD_BYTES, allowedMime, deleteFile, isOwnStorageUrl, scanUpload } from "@/lib/storage";
 import { processDocument } from "@/lib/parsing/pipeline";
+import { prefillCase } from "@/lib/parsing/prefill";
+import { applyReviewPeriod } from "@/lib/cases/service";
 import type { SessionUser } from "@/lib/auth/guard";
 
 export async function registerDocument(
@@ -92,4 +94,53 @@ export async function getCaseDocument(caseId: number, documentId: number) {
     .where(and(eq(documents.id, documentId), eq(documents.caseId, caseId)));
   if (!doc) throw new HttpError(404, "Document not found");
   return doc;
+}
+
+/**
+ * Analyst removes a document from the case. Its transactions and parse issues go with it (FK
+ * cascade); AI pre-fills and sub-alerts read from it are cleared and rebuilt from the remaining
+ * documents. Fields the analyst already confirmed or edited keep the analyst's value.
+ */
+export async function removeDocument(caseId: number, user: SessionUser, documentId: number) {
+  const doc = await getCaseDocument(caseId, documentId);
+  const db = await getDb();
+  const fromThisFile = (ref: string | null) => ref === doc.fileName || !!ref?.startsWith(`${doc.fileName} · `);
+
+  const [{ n: txnCount }] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(transactions)
+    .where(eq(transactions.documentId, doc.id));
+
+  const fields = await db.select().from(caseFields).where(eq(caseFields.caseId, caseId));
+  const cleared = fields.filter((f) => f.status === "ai" && fromThisFile(f.sourceRef));
+  for (const f of cleared) {
+    await db.update(caseFields).set({ aiValue: null, sourceRef: null, confidence: null }).where(eq(caseFields.id, f.id));
+  }
+  // A review period that only came from this file's AI values is unset, so the remaining documents can set it.
+  if (cleared.some((f) => f.question === "q2")) {
+    await db.update(cases).set({ reviewStart: null, reviewEnd: null }).where(eq(cases.id, caseId));
+  }
+  const subs = (await db.select().from(subAlerts).where(eq(subAlerts.caseId, caseId))).filter(
+    (x) => x.aiValue != null && fromThisFile(x.sourceRef),
+  );
+  for (const x of subs) await db.delete(subAlerts).where(eq(subAlerts.id, x.id));
+
+  await db.delete(documents).where(eq(documents.id, doc.id));
+  await logAudit({
+    caseId,
+    actorId: user.id,
+    action: "document_removed",
+    entity: "document",
+    entityId: doc.id,
+    before: { fileName: doc.fileName, type: doc.confirmedType ?? doc.detectedType },
+    after: { transactions: txnCount, clearedFields: cleared.length, subAlerts: subs.length },
+  });
+  await prefillCase(caseId);
+  await applyReviewPeriod(caseId);
+  try {
+    await deleteFile(doc.blobUrl);
+  } catch {
+    // The case no longer references the file; log the id (never the contents) so it can be cleaned up by hand.
+    console.error(`[documents] could not delete stored file for document ${doc.id}`);
+  }
 }

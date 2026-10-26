@@ -7,6 +7,7 @@ import { docTypeEnum, documents } from "@/lib/db/schema";
 import { HttpError, idParam, parseBody, route } from "@/lib/http";
 import { logAudit } from "@/lib/audit/log";
 import { processDocument } from "@/lib/parsing/pipeline";
+import { removeDocument } from "@/lib/documents/service";
 import { TXN_FIELDS } from "@/lib/parsing/headers";
 import { ISO_CURRENCIES } from "@/lib/parsing/values";
 
@@ -67,5 +68,16 @@ export const PATCH = route(async (req, { params }: Ctx) => {
   const reuse = !body.confirmedType || body.confirmedType === (doc.confirmedType ?? doc.detectedType);
   await db.update(documents).set({ parseStatus: "pending" }).where(eq(documents.id, id));
   after(() => processDocument(id, user.id, { reuseExtraction: reuse }));
+  return NextResponse.json({ ok: true });
+});
+
+export const DELETE = route(async (_req, { params }: Ctx) => {
+  const user = await requireRole(["analyst"]);
+  const db = await getDb();
+  const id = idParam((await params).id);
+  const [doc] = await db.select().from(documents).where(eq(documents.id, id));
+  if (!doc) throw new HttpError(404, "Document not found");
+  await getEditableCase(doc.caseId, user);
+  await removeDocument(doc.caseId, user, id);
   return NextResponse.json({ ok: true });
 });

@@ -250,3 +250,39 @@ export function CurrencyDialog({ doc }: { doc: DocumentSummary }) {
     </Dialog>
   );
 }
+
+/** Removes a document after confirmation; what was read from it is cleared and rebuilt from the rest. */
+export function RemoveDocumentDialog({ doc, trigger }: { doc: DocumentSummary; trigger: React.ReactNode }) {
+  const [open, setOpen] = React.useState(false);
+  const { run, error, busy } = useAction();
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="icon" aria-label={`Remove ${doc.fileName}`} title="Remove document">
+          {trigger}
+        </Button>
+      </DialogTrigger>
+      <DialogContent title="Remove this document?" description={doc.fileName}>
+        <p className="text-[13.5px]">
+          The file is deleted from this case together with everything read from it: its transactions, parse issues,
+          AI pre-filled values and sub-alerts. Values you have already confirmed or edited stay as they are. Rules and
+          ranking re-run on the remaining documents. The removal is recorded in the audit trail.
+        </p>
+        {error ? <p className="mt-2 text-[13px] text-risk">{error}</p> : null}
+        <div className="mt-4 flex justify-end gap-2">
+          <Button onClick={() => setOpen(false)}>Cancel</Button>
+          <Button
+            variant="danger"
+            disabled={busy}
+            onClick={async () => {
+              const ok = await run(() => api(`/api/documents/${doc.id}`, { method: "DELETE" }));
+              if (ok) setOpen(false);
+            }}
+          >
+            Remove document
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
