@@ -168,6 +168,8 @@ test("dashboard shows approved cases and works at 390 px", async ({ page }) => {
   await expect(page.getByText("ALR-2026-000123")).toBeVisible();
   await axe(page, "dashboard");
   await page.setViewportSize({ width: 390, height: 844 });
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-  expect(overflow).toBeLessThanOrEqual(0);
+  // The charts re-measure after the resize; wait for them to settle.
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth))
+    .toBeLessThanOrEqual(0);
 });

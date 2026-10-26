@@ -27,9 +27,9 @@ for (const [alert, scenario, matches] of [
       await page.getByRole("radio", { name: i === 5 ? "Needs RFI" : "Agree" }).nth(i).click();
       await expect(page.getByText(new RegExp(`${i + 1} of 6 reviewed`))).toBeVisible();
     }
-    await page.getByRole("button", { name: "Generate narrative" }).click();
-    await page.waitForURL(/\/narrative$/);
-    await expect(page.locator(".ProseMirror")).toContainText("8. Points for analyst decision");
+    // Opening screen 4 with nothing blocking drafts the narrative on its own.
+    await page.goto(`${url}/narrative`);
+    await expect(page.locator(".ProseMirror")).toContainText("8. Points for analyst decision", { timeout: 60_000 });
     await page.getByLabel("Close – no further action").check();
     await page.fill("#rationale", "Activity explained by documented trade; no further action required.");
     await page.locator("#rationale").blur();

@@ -29,7 +29,10 @@ export default async function NarrativePage({ params }: { params: Promise<{ id: 
           </div>
         ) : (
           <div className="mx-auto mt-5 max-w-[360px]">
-            <GenerateNarrativeButton caseId={c.id} blockers={[]} hasNarrative={false} readOnly={false} />
+            <GenerateNarrativeButton caseId={c.id} blockers={[]} hasNarrative={false} readOnly={false} auto />
+            <p role="status" className="mt-3 text-[13px] text-muted">
+              Gemini drafts the narrative from Q1–Q5 and the red flags. It takes up to a minute; you review and edit it next.
+            </p>
           </div>
         )}
         <Button asChild className="mt-5">

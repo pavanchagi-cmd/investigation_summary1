@@ -14,16 +14,42 @@ export function GenerateNarrativeButton({
   hasNarrative,
   readOnly,
   emptySubAlerts = 0,
+  auto = false,
 }: {
   caseId: number;
   blockers: string[];
   hasNarrative: boolean;
   readOnly: boolean;
   emptySubAlerts?: number;
+  /** Start drafting as soon as nothing blocks it (once per visit; a failure leaves the button for a retry). */
+  auto?: boolean;
 }) {
   const router = useRouter();
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const canRun = !hasNarrative && !readOnly && blockers.length === 0;
+
+  async function generate() {
+    setBusy(true);
+    setError(null);
+    try {
+      await api(`/api/cases/${caseId}/narrative`, { body: {} });
+      router.push(`/cases/${caseId}/narrative`);
+      router.refresh();
+    } catch (e) {
+      setError((e as Error).message);
+      setBusy(false);
+    }
+  }
+
+  const autoRan = React.useRef(false);
+  React.useEffect(() => {
+    if (!auto || !canRun || autoRan.current) return;
+    autoRan.current = true;
+    void generate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auto, canRun]);
+
   if (hasNarrative || readOnly) {
     return (
       <Button asChild variant="primary" size="lg" className="w-full">
@@ -41,21 +67,10 @@ export function GenerateNarrativeButton({
         disabled={disabled}
         aria-describedby={blockers.length ? "narrative-blockers" : undefined}
         title={blockers.length ? blockers.join("\n") : undefined}
-        onClick={async () => {
-          setBusy(true);
-          setError(null);
-          try {
-            await api(`/api/cases/${caseId}/narrative`, { body: {} });
-            router.push(`/cases/${caseId}/narrative`);
-            router.refresh();
-          } catch (e) {
-            setError((e as Error).message);
-            setBusy(false);
-          }
-        }}
+        onClick={generate}
       >
         {busy ? <Loader2 className="animate-spin" /> : <Sparkles />}
-        {busy ? "Drafting narrative…" : "Generate narrative"}
+        {busy ? "Drafting narrative…" : error ? "Try again" : "Generate narrative"}
       </Button>
       {blockers.length ? (
         <BlockerList
