@@ -4,7 +4,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 
 /**
- * File storage. Vercel Blob (private) when BLOB_READ_WRITE_TOKEN is set; otherwise a local
+ * File storage. Vercel Blob (private) when a Blob token is set (see blobToken); otherwise a local
  * directory for dev/tests (refused on Vercel). Stored URLs never reach the browser.
  */
 
@@ -24,9 +24,24 @@ export const ALLOWED_TYPES: Record<string, string> = {
 const LOCAL_PREFIX = "local://";
 const LOCAL_DIR = path.resolve(process.env.LOCAL_UPLOAD_DIR ?? path.join(process.cwd(), ".data", "uploads"));
 
+/**
+ * Blob read-write token. Vercel names it BLOB_READ_WRITE_TOKEN by default, or <PREFIX>_READ_WRITE_TOKEN
+ * when the store was connected with a custom prefix.
+ */
+export function blobToken(): string | undefined {
+  const exact = process.env.BLOB_READ_WRITE_TOKEN?.trim();
+  if (exact) return exact;
+  for (const [k, v] of Object.entries(process.env)) {
+    if (k.endsWith("_READ_WRITE_TOKEN") && v?.trim().startsWith("vercel_blob_rw_")) return v.trim();
+  }
+  return undefined;
+}
+
 export function storageMode(): "blob" | "local" {
-  if (process.env.BLOB_READ_WRITE_TOKEN) return "blob";
-  if (process.env.VERCEL) throw new Error("BLOB_READ_WRITE_TOKEN is not set. Connect a Blob store in the Vercel Storage tab.");
+  if (blobToken()) return "blob";
+  if (process.env.VERCEL) {
+    throw new Error("No Blob store token found (BLOB_READ_WRITE_TOKEN). Connect a Blob store to this project in the Vercel Storage tab, then redeploy.");
+  }
   return "local";
 }
 
@@ -49,7 +64,7 @@ export async function putFile(caseId: number, fileName: string, body: Buffer, mi
   const name = `cases/${caseId}/${crypto.randomUUID()}-${safeFileName(fileName)}`;
   if (storageMode() === "blob") {
     const { put } = await import("@vercel/blob");
-    const res = await put(name, body, { access: "private", contentType: mime, addRandomSuffix: false });
+    const res = await put(name, body, { access: "private", contentType: mime, addRandomSuffix: false, token: blobToken() });
     return res.url;
   }
   const full = path.join(LOCAL_DIR, name);
@@ -66,7 +81,7 @@ export async function readFile(url: string): Promise<Buffer> {
     return fs.readFile(full);
   }
   const { get } = await import("@vercel/blob");
-  const res = await get(url, { access: "private" });
+  const res = await get(url, { access: "private", token: blobToken() });
   if (!res || res.statusCode !== 200) throw new Error("File not found in storage");
   const chunks: Uint8Array[] = [];
   const reader = res.stream.getReader();
@@ -85,7 +100,7 @@ export async function deleteFile(url: string) {
     return;
   }
   const { del } = await import("@vercel/blob");
-  await del(url);
+  await del(url, { token: blobToken() });
 }
 
 /** Only URLs from our own Blob store (or local storage) may be registered as documents. */

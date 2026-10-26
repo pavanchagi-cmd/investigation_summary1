@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { getEditableCase, requireRole } from "@/lib/auth/guard";
 import { HttpError, errorResponse } from "@/lib/http";
-import { ALLOWED_TYPES, MAX_UPLOAD_BYTES, allowedMime, storageMode } from "@/lib/storage";
+import { ALLOWED_TYPES, MAX_UPLOAD_BYTES, allowedMime, blobToken, storageMode } from "@/lib/storage";
 
 /**
  * Issues short-lived client-upload tokens so the browser uploads straight to private Vercel
@@ -13,6 +13,7 @@ export async function POST(req: Request) {
     if (storageMode() !== "blob") throw new HttpError(400, "Blob storage is not configured; use local upload");
     const body = (await req.json()) as HandleUploadBody;
     const result = await handleUpload({
+      token: blobToken(),
       body,
       request: req,
       onBeforeGenerateToken: async (pathname, clientPayload) => {

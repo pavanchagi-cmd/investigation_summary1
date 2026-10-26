@@ -2,6 +2,7 @@ import "server-only";
 import { count } from "drizzle-orm";
 import { users } from "@/lib/db/schema";
 import { databaseUrl } from "@/lib/db/client";
+import { blobToken } from "@/lib/storage";
 import { getDb } from "@/lib/db";
 
 /**
@@ -12,6 +13,9 @@ export async function setupProblems(): Promise<string[]> {
   const problems: string[] = [];
   if (!process.env.AUTH_SECRET) {
     problems.push("AUTH_SECRET is not set. Add it in Vercel → Settings → Environment Variables, then redeploy.");
+  }
+  if (process.env.VERCEL && !blobToken()) {
+    problems.push("No Blob store token found (BLOB_READ_WRITE_TOKEN). Uploads will fail until a Blob store is connected to this project in the Vercel Storage tab and the project is redeployed.");
   }
   if (process.env.VERCEL && !databaseUrl()) {
     problems.push("No database is connected (DATABASE_URL / POSTGRES_URL missing). Connect Neon Postgres in the Vercel Storage tab, then redeploy.");
