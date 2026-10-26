@@ -19,7 +19,8 @@ for (const [alert, scenario, matches] of [
     await page.goto(`${url}/purpose`);
     await expect(page.locator("div.rounded-lg", { hasText: scenario }).first()).toContainText(matches);
     await expect(page.getByText("No match")).toHaveCount(3);
-    await page.getByRole("button", { name: /Draft summaries with Gemini/ }).click();
+    // Summaries are drafted automatically when the screen opens.
+    await expect(page.getByText(/no summary yet/i)).toHaveCount(0, { timeout: 60_000 });
     await expect(page.getByText("0 of 6 reviewed")).toBeVisible();
     await page.getByRole("button", { name: /Show 3 more summaries/ }).click();
     for (let i = 0; i < 6; i++) {

@@ -62,6 +62,16 @@ export function Q5Cards({ caseId, items, readOnly }: { caseId: number; items: Q5
     }
   }
 
+  // Draft the missing summaries as soon as the top 6 are known; once per visit, so a failure
+  // leaves the button for a manual retry instead of looping. They stay AI drafts for review.
+  const autoRan = React.useRef(false);
+  React.useEffect(() => {
+    if (autoRan.current || readOnly || items.length === 0 || missing === 0) return;
+    autoRan.current = true;
+    void generate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [readOnly, items.length, missing]);
+
   return (
     <Card className="min-w-0">
       <CardHeader
@@ -77,9 +87,13 @@ export function Q5Cards({ caseId, items, readOnly }: { caseId: number; items: Q5
       ) : null}
       {missing > 0 && !readOnly ? (
         <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg bg-accent-soft px-4 py-3 text-[13.5px]">
-          <span>{missing} counterpart{missing === 1 ? "y has" : "ies have"} no summary yet.</span>
+          <span role="status">
+            {busy
+              ? `Drafting ${missing} summar${missing === 1 ? "y" : "ies"} with Gemini…`
+              : `${missing} counterpart${missing === 1 ? "y has" : "ies have"} no summary yet.`}
+          </span>
           <Button variant="primary" size="sm" onClick={generate} disabled={busy}>
-            {busy ? <Loader2 className="animate-spin" /> : <Sparkles />} Draft summaries with Gemini
+            {busy ? <Loader2 className="animate-spin" /> : <Sparkles />} {error ? "Try again" : "Draft summaries with Gemini"}
           </Button>
           {error ? <span className="text-risk">{error}</span> : null}
         </div>

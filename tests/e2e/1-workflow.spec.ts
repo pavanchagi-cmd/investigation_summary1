@@ -53,7 +53,8 @@ test("analyst completes ALR-2026-000123 from alert entry to Word export", async 
   await expect(page.getByText(/7 wires of USD 9,500–9,950 to Pinewood Textiles within 6 days; total 68,900\./)).toBeVisible();
   await expect(page.getByText("12 matches")).toBeVisible();
   await expect(page.getByText("41 matches")).toBeVisible();
-  await page.getByRole("button", { name: /Draft summaries with Gemini/ }).click();
+  // Summaries are drafted automatically when the screen opens.
+  await expect(page.getByText(/no summary yet/i)).toHaveCount(0, { timeout: 60_000 });
   await expect(page.getByText("0 of 6 reviewed")).toBeVisible();
   await page.getByRole("button", { name: /Show 3 more summaries/ }).click();
   for (let i = 0; i < 6; i++) {
