@@ -5,7 +5,7 @@ import { ALL_ROLES, getCaseForUser, getEditableCase, requireRole } from "@/lib/a
 import { getDb } from "@/lib/db";
 import { cases, scenarioEnum, dispositionEnum } from "@/lib/db/schema";
 import { idParam, parseBody, route } from "@/lib/http";
-import { addSubAlert, listSubAlerts, removeSubAlert, setAlertNumber, setReviewPeriod, updateSubAlert } from "@/lib/cases/service";
+import { addSubAlert, listSubAlerts, removeEmptySubAlerts, removeSubAlert, setAlertNumber, setReviewPeriod, updateSubAlert } from "@/lib/cases/service";
 import { logAudit } from "@/lib/audit/log";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -37,6 +37,7 @@ const Patch = z.discriminatedUnion("action", [
       .partial(),
   }),
   z.object({ action: z.literal("remove_sub_alert"), id: z.number().int().positive() }),
+  z.object({ action: z.literal("remove_empty_sub_alerts") }),
   z.object({
     action: z.literal("set_disposition"),
     disposition: z.enum(dispositionEnum.enumValues).nullable(),
@@ -58,6 +59,8 @@ export const PATCH = route(async (req, { params }: Ctx) => {
       return NextResponse.json({ subAlert: await addSubAlert(c.id, user) });
     case "update_sub_alert":
       return NextResponse.json({ subAlert: await updateSubAlert(c.id, user, body.id, body.patch) });
+    case "remove_empty_sub_alerts":
+      return NextResponse.json({ removed: await removeEmptySubAlerts(c.id, user) });
     case "remove_sub_alert":
       await removeSubAlert(c.id, user, body.id);
       break;

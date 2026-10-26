@@ -60,7 +60,7 @@ export default async function PurposePage({ params }: { params: Promise<{ id: st
         checkedCount={stats.inPeriod}
         readOnly={readOnly}
         baseCcy={cfg.fx_rates.base}
-        footer={<GenerateNarrativeButton caseId={c.id} blockers={progress.narrativeBlockers} hasNarrative={progress.hasNarrative} readOnly={readOnly} />}
+        footer={<GenerateNarrativeButton caseId={c.id} blockers={progress.narrativeBlockers} hasNarrative={progress.hasNarrative} readOnly={readOnly} emptySubAlerts={progress.emptySubAlerts} />}
       />
     </div>
   );

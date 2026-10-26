@@ -18,14 +18,14 @@ export default async function NarrativePage({ params }: { params: Promise<{ id: 
   const { c, readOnly } = await loadAnalystCase((await params).id);
   const versions = await listVersions(c.id);
   if (!versions.length) {
-    const { narrativeBlockers } = await getProgress(c);
+    const { narrativeBlockers, emptySubAlerts } = await getProgress(c);
     return (
       <div className="rounded-xl border border-line bg-surface p-8 text-center">
         <h2 className="text-[18px] font-semibold">No narrative yet</h2>
         {readOnly ? null : narrativeBlockers.length ? (
           <div className="mx-auto mt-3 max-w-[560px]">
             <p className="text-[14px] text-muted">The narrative can be generated once these are done:</p>
-            <BlockerList caseId={c.id} blockers={narrativeBlockers} />
+            <BlockerList caseId={c.id} blockers={narrativeBlockers} emptySubAlerts={emptySubAlerts} />
           </div>
         ) : (
           <div className="mx-auto mt-5 max-w-[360px]">

@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { caseFields, counterparties, documents, narratives, relationshipSummaries, subAlerts, type Case } from "@/lib/db/schema";
 import { Q3_REQUIRED } from "@/lib/parsing/prefill";
-import { openIssueCount } from "./service";
+import { isEmptySubAlert, openIssueCount } from "./service";
 
 const LABELS: Record<string, string> = {
   client_name: "client name",
@@ -20,6 +20,8 @@ export type Progress = {
   approveBlockers: string[];
   openIssues: number;
   hasNarrative: boolean;
+  /** Sub-alerts added by hand and never filled in. */
+  emptySubAlerts: number;
 };
 
 export async function getProgress(c: Case): Promise<Progress> {
@@ -69,5 +71,6 @@ export async function getProgress(c: Case): Promise<Progress> {
     approveBlockers,
     openIssues,
     hasNarrative: nars.length > 0,
+    emptySubAlerts: subs.filter(isEmptySubAlert).length,
   };
 }

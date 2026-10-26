@@ -37,6 +37,8 @@ test("analyst corrects the alert number; sub-alerts follow and duplicates are re
   await page.goto(page.url().replace(/\/intake$/, "/narrative"));
   await expect(page.getByText("Q1: choose a scenario for sub-alert ALR-2026-000902-01 (or remove it)")).toBeVisible();
   await expect(page.getByRole("link", { name: "Alert & documents" }).last()).toBeVisible();
+  await page.getByRole("button", { name: "Remove 1 empty sub-alert" }).click();
+  await expect(page.getByText("Q1: add at least one sub-alert")).toBeVisible();
 
   await page.goto(page.url().replace(/\/narrative$/, "/audit"));
   await expect(page.getByText(/removed transactions_Q3\.xlsx \(\d+ transactions\)/)).toBeVisible();

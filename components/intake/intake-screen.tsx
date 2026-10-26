@@ -17,6 +17,7 @@ import type { FieldView } from "@/lib/cases/fields";
 import type { DocumentSummary } from "@/lib/documents/service";
 import type { IssueRow } from "@/lib/documents/issues";
 import { DocumentsPanel } from "./documents-panel";
+import { RemoveEmptySubAlertsButton } from "@/components/purpose/generate-button";
 
 export const SCENARIO_LABELS = {
   large_amount: "Large Amount Transaction",
@@ -95,6 +96,9 @@ function Q1Card({ caseId, alertNumber, readOnly, subAlerts, fields }: Parameters
   const reportValue = typeof reportNumber?.value === "string" ? reportNumber.value.trim().toUpperCase() : null;
   const mismatch = !!reportValue && reportValue !== alertNumber;
   const anyAi = subAlerts.some((s) => s.isAi);
+  const emptyCount = subAlerts.filter(
+    (s) => !s.isAi && !s.scenario && !s.ruleId && !s.threshold && !s.triggerDetails && s.triggeringTxnCount == null,
+  ).length;
   const [draft, setDraft] = React.useState(alertNumber);
   const [numberError, setNumberError] = React.useState<string | null>(null);
   React.useEffect(() => setDraft(alertNumber), [alertNumber]);
@@ -174,9 +178,12 @@ function Q1Card({ caseId, alertNumber, readOnly, subAlerts, fields }: Parameters
       <div className="mt-6 mb-3 flex items-center justify-between gap-3">
         <h3 className="text-[15px] font-semibold">Sub-alerts ({subAlerts.length})</h3>
         {!readOnly ? (
-          <Button onClick={() => patch({ action: "add_sub_alert" })}>
-            <Plus /> Add sub-alert
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            {emptyCount > 0 ? <RemoveEmptySubAlertsButton caseId={caseId} count={emptyCount} /> : null}
+            <Button onClick={() => patch({ action: "add_sub_alert" })}>
+              <Plus /> Add sub-alert
+            </Button>
+          </div>
         ) : null}
       </div>
       {subAlerts.length === 0 ? (

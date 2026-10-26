@@ -168,6 +168,21 @@ export async function removeSubAlert(caseId: number, user: SessionUser, id: numb
   await logAudit({ caseId, actorId: user.id, action: "sub_alert_removed", entity: "sub_alert", entityId: id, before });
 }
 
+/** A sub-alert the analyst added but never filled in (nothing read from a document either). */
+export function isEmptySubAlert(s: typeof subAlerts.$inferSelect) {
+  return s.aiValue == null && !s.scenario && !s.ruleId && !s.threshold && !s.triggerDetails && s.triggeringTxnCount == null;
+}
+
+export async function removeEmptySubAlerts(caseId: number, user: SessionUser) {
+  const db = await getDb();
+  const empty = (await db.select().from(subAlerts).where(eq(subAlerts.caseId, caseId))).filter(isEmptySubAlert);
+  for (const s of empty) {
+    await db.delete(subAlerts).where(eq(subAlerts.id, s.id));
+    await logAudit({ caseId, actorId: user.id, action: "sub_alert_removed", entity: "sub_alert", entityId: s.id, before: s });
+  }
+  return empty.length;
+}
+
 export async function listSubAlerts(caseId: number) {
   const db = await getDb();
   return db.select().from(subAlerts).where(eq(subAlerts.caseId, caseId)).orderBy(asc(subAlerts.subAlertNumber));
