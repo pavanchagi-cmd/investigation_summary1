@@ -82,6 +82,8 @@ export function describeAudit(e: Entry): string {
       return `${who} exported ${String(a.format).toUpperCase()}`;
     case "config_updated":
       return `${who} updated setting ${e.entityId}`;
+    case "user_renamed":
+      return `${who} renamed a user: ${b.name} → ${a.name}`;
     case "user_role_changed":
       return `${who} changed a user's role to ${a.role}`;
     case "retention_purge":

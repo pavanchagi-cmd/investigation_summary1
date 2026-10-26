@@ -44,3 +44,18 @@ test("analyst corrects the alert number; sub-alerts follow and duplicates are re
   await expect(page.getByText(/removed transactions_Q3\.xlsx \(\d+ transactions\)/)).toBeVisible();
   await expect(page.getByText("changed the alert number: ALR-2026-000901 → ALR-2026-000902")).toBeVisible();
 });
+
+test("admin renames an analyst; the top bar and case list show the new name", async ({ page }) => {
+  await login(page, "analyst2@demo.local");
+  await expect(page.getByText("S. Iyer · L2 Analyst")).toBeVisible();
+
+  await login(page, "admin@demo.local");
+  await page.goto("/admin");
+  await page.getByLabel("Name for Sanjay Iyer").fill("Sanjay K. Iyer");
+  await page.getByRole("button", { name: "Save name for Sanjay Iyer" }).click();
+  await expect(page.getByText("Name saved.")).toBeVisible();
+
+  await login(page, "analyst2@demo.local");
+  await expect(page.getByText("S. K. Iyer · L2 Analyst")).toBeVisible();
+  await expect(page.getByRole("cell", { name: "Sanjay K. Iyer" }).first()).toBeVisible();
+});

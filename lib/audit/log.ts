@@ -34,6 +34,7 @@ export type AuditAction =
   | "exported"
   | "config_updated"
   | "user_role_changed"
+  | "user_renamed"
   | "retention_purge";
 
 export type AuditInput = {

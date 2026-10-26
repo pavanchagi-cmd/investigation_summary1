@@ -16,6 +16,7 @@ export const GET = route(async () => {
 
 const Patch = z.object({
   id: z.number().int().positive(),
+  name: z.string().trim().min(2, "Name must be at least 2 characters").max(80).optional(),
   role: z.enum(roleEnum.enumValues).optional(),
   viewFullAccount: z.boolean().optional(),
 });
@@ -26,6 +27,23 @@ export const PATCH = route(async (req) => {
   const db = await getDb();
   const [u] = await db.select().from(users).where(eq(users.id, body.id));
   if (!u) throw new HttpError(404, "User not found");
+  if (body.name !== undefined) {
+    if (body.name !== u.name) {
+      await db.update(users).set({ name: body.name }).where(eq(users.id, u.id));
+      await logAudit({
+        caseId: null,
+        actorId: admin.id,
+        action: "user_renamed",
+        entity: "user",
+        entityId: u.id,
+        before: { name: u.name },
+        after: { name: body.name },
+      });
+    }
+    if (body.role === undefined && body.viewFullAccount === undefined) {
+      return NextResponse.json({ ok: true, note: "Name saved." });
+    }
+  }
   if (u.id === admin.id && body.role && body.role !== "admin") throw new HttpError(400, "You cannot remove your own admin role");
   const permissions =
     body.viewFullAccount === undefined

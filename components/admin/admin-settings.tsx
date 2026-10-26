@@ -308,7 +308,9 @@ function UsersTable({ users, selfId }: { users: { id: number; name: string; emai
         <tbody>
           {users.map((u) => (
             <tr key={u.id} className="border-t border-line">
-              <td className="py-2">{u.name}</td>
+              <td className="py-2 pr-3">
+                <NameInput key={u.name} id={u.id} name={u.name} onSave={(name) => patch({ id: u.id, name })} />
+              </td>
               <td className="py-2 font-mono text-[13px]">{u.email}</td>
               <td className="py-2">
                 <Select aria-label={`Role for ${u.name}`} className="h-9 w-[140px]" value={u.role} disabled={u.id === selfId} onChange={(e) => patch({ id: u.id, role: e.target.value })}>
@@ -334,5 +336,26 @@ function UsersTable({ users, selfId }: { users: { id: number; name: string; emai
       </table>
       {msg ? <p className="mt-2 text-[13px] text-muted">{msg}</p> : null}
     </div>
+  );
+}
+
+function NameInput({ id, name, onSave }: { id: number; name: string; onSave: (name: string) => void }) {
+  const [value, setValue] = React.useState(name);
+  const dirty = value.trim() !== name && value.trim().length >= 2;
+  return (
+    <form
+      className="flex items-center gap-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (dirty) onSave(value.trim());
+      }}
+    >
+      <Input id={`user-name-${id}`} aria-label={`Name for ${name}`} className="h-9 w-[180px]" value={value} maxLength={80} onChange={(e) => setValue(e.target.value)} />
+      {dirty ? (
+        <Button type="submit" size="sm" variant="primary" aria-label={`Save name for ${name}`}>
+          Save
+        </Button>
+      ) : null}
+    </form>
   );
 }
