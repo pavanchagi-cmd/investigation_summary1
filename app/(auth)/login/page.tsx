@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { FileText } from "lucide-react";
 import { auth } from "@/auth";
-import { setupProblems } from "@/lib/setup-check";
+import { setupProblems, setupWarnings } from "@/lib/setup-check";
 import { LoginForm } from "./login-form";
 
 export const metadata = { title: "Sign in · TM Summary Drafter" };
@@ -10,6 +10,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   // auth() throws when AUTH_SECRET is missing; the setup panel below explains what to fix.
   const session = await auth().catch(() => null);
   const problems = await setupProblems();
+  const warnings = setupWarnings();
   const { next } = await searchParams;
   const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "/cases";
   if (session?.user) redirect(safeNext);
@@ -28,6 +29,13 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
                 <li key={p}>{p}</li>
               ))}
             </ul>
+          </div>
+        ) : null}
+        {warnings.length ? (
+          <div role="status" className="mb-5 rounded-md border border-ai/30 bg-ai-soft px-4 py-3 text-[13px] text-ai">
+            {warnings.map((w) => (
+              <p key={w}>{w}</p>
+            ))}
           </div>
         ) : null}
         <LoginForm next={safeNext} />

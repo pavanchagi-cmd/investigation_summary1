@@ -14,9 +14,6 @@ export async function setupProblems(): Promise<string[]> {
   if (!process.env.AUTH_SECRET) {
     problems.push("AUTH_SECRET is not set. Add it in Vercel → Settings → Environment Variables, then redeploy.");
   }
-  if (process.env.VERCEL && !blobToken()) {
-    problems.push("No Blob store token found (BLOB_READ_WRITE_TOKEN). Uploads will fail until a Blob store is connected to this project in the Vercel Storage tab and the project is redeployed.");
-  }
   if (process.env.VERCEL && !databaseUrl()) {
     problems.push("No database is connected (DATABASE_URL / POSTGRES_URL missing). Connect Neon Postgres in the Vercel Storage tab, then redeploy.");
     return problems;
@@ -39,4 +36,14 @@ export async function setupProblems(): Promise<string[]> {
     );
   }
   return problems;
+}
+
+/** Non-blocking: sign-in works, but document uploads need a Blob store. */
+export function setupWarnings(): string[] {
+  if (process.env.VERCEL && !blobToken()) {
+    return [
+      "Document uploads are not available yet: no Blob store token (BLOB_READ_WRITE_TOKEN) was found. Connect a Blob store to this project in Vercel, then redeploy. You can sign in meanwhile.",
+    ];
+  }
+  return [];
 }
