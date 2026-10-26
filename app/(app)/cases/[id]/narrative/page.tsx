@@ -6,6 +6,8 @@ import type { PMDoc } from "@/lib/narrative/doc";
 import { formatDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { NarrativeWorkspace } from "@/components/narrative/narrative-workspace";
+import { getProgress } from "@/lib/cases/progress";
+import { BlockerList, GenerateNarrativeButton } from "@/components/purpose/generate-button";
 import { AuditPanel, DispositionPanel, ExportPanel } from "@/components/narrative/side-panels";
 
 export const metadata = { title: "Narrative & decision · TM Summary Drafter" };
@@ -16,11 +18,21 @@ export default async function NarrativePage({ params }: { params: Promise<{ id: 
   const { c, readOnly } = await loadAnalystCase((await params).id);
   const versions = await listVersions(c.id);
   if (!versions.length) {
+    const { narrativeBlockers } = await getProgress(c);
     return (
       <div className="rounded-xl border border-line bg-surface p-8 text-center">
         <h2 className="text-[18px] font-semibold">No narrative yet</h2>
-        <p className="mt-2 text-[14px] text-muted">Complete Q1–Q4, resolve parse issues and click Generate narrative on the Purpose & red flags step.</p>
-        <Button asChild variant="primary" className="mt-5">
+        {readOnly ? null : narrativeBlockers.length ? (
+          <div className="mx-auto mt-3 max-w-[560px]">
+            <p className="text-[14px] text-muted">The narrative can be generated once these are done:</p>
+            <BlockerList caseId={c.id} blockers={narrativeBlockers} />
+          </div>
+        ) : (
+          <div className="mx-auto mt-5 max-w-[360px]">
+            <GenerateNarrativeButton caseId={c.id} blockers={[]} hasNarrative={false} readOnly={false} />
+          </div>
+        )}
+        <Button asChild className="mt-5">
           <Link href={`/cases/${c.id}/purpose`}>Go to Purpose & red flags</Link>
         </Button>
       </div>

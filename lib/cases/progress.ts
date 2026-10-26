@@ -51,7 +51,9 @@ export async function getProgress(c: Case): Promise<Progress> {
   const blockers: string[] = [];
   if (!docs.length) blockers.push("Upload the alert's documents");
   if (pending) blockers.push("Wait for documents to finish parsing");
-  if (!q1) blockers.push("Q1: add at least one sub-alert and choose a scenario for each");
+  const noScenario = subs.filter((s) => !s.scenario).map((s) => s.subAlertNumber);
+  if (!subs.length) blockers.push("Q1: add at least one sub-alert");
+  else if (noScenario.length) blockers.push(`Q1: choose a scenario for sub-alert ${noScenario.join(", ")} (or remove it)`);
   if (!q2) blockers.push("Q2: set a review period (start ≤ end)");
   if (missingQ3.length) blockers.push(`Q3: add ${missingQ3.map((k) => LABELS[k] ?? k).join(", ")}`);
   if (!q4) blockers.push(cps.length ? "Q4: re-run the analysis (data changed)" : "Q4: no in-period transactions to rank yet");
