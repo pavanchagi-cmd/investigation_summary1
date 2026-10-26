@@ -9,6 +9,7 @@ import { Select } from "@/components/ui/form";
 import { useSave } from "@/components/case/save-status";
 import { api } from "@/lib/client/api";
 import { DOC_TYPE_LABELS } from "@/lib/parsing/detect";
+import { AUTO_CORRECTED_PREFIX } from "@/lib/parsing/values";
 import type { DocumentSummary } from "@/lib/documents/service";
 import type { IssueRow } from "@/lib/documents/issues";
 import { cn } from "@/lib/utils";
@@ -187,6 +188,9 @@ export function DocumentsPanel({
         {documents.map((d) => {
           const st = statusText(d);
           const docIssues = issues.filter((i) => i.documentId === d.id && i.resolution === "open");
+          const autoFixed = issues.filter(
+            (i) => i.documentId === d.id && i.resolution === "fixed" && i.resolutionReason?.startsWith(AUTO_CORRECTED_PREFIX),
+          );
           const hasProblem = d.parseStatus === "failed" || docIssues.length > 0 || d.needsMapping;
           return (
             <li key={d.id} className={cn("rounded-lg border p-3", hasProblem ? "border-ai/50 bg-ai-soft/40" : "border-line")}>
@@ -220,6 +224,25 @@ export function DocumentsPanel({
                     .join(" · ")}
                   {docIssues.length > 3 ? ` · +${docIssues.length - 3} more` : ""}
                 </p>
+              ) : null}
+              {autoFixed.length > 0 ? (
+                <div className="mt-2 rounded-md bg-ai-soft px-3 py-2 text-[12.5px]">
+                  <p className="font-medium text-ai">
+                    {autoFixed.length} value{autoFixed.length === 1 ? "" : "s"} auto-corrected – analyst to verify
+                  </p>
+                  <ul className="mt-1 space-y-0.5 font-mono text-[12px] text-ink">
+                    {autoFixed.map((i) => (
+                      <li key={i.id}>
+                        {i.sourceRowOrPage.replace(/^row/, "Row")} · {i.field}: &quot;{i.rawValue}&quot; → {i.fixedValues?.[i.field ?? ""]}
+                      </li>
+                    ))}
+                  </ul>
+                  {!readOnly ? (
+                    <div className="mt-2">
+                      <FixRowsDialog caseId={caseId} doc={d} issues={autoFixed} label="Change" />
+                    </div>
+                  ) : null}
+                </div>
               ) : null}
               {!readOnly && d.needsMapping ? (
                 <div className="mt-2">

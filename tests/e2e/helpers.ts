@@ -3,6 +3,8 @@ import { expect, type Page } from "@playwright/test";
 export const PASSWORD = "e2e-password";
 
 export async function login(page: Page, email: string) {
+  // Let in-flight refreshes finish before dropping the session (see logout), or one can renew the cookie.
+  await page.waitForLoadState("networkidle");
   await page.context().clearCookies();
   await page.goto("/login");
   await page.fill("#email", email);

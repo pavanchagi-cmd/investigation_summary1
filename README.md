@@ -72,7 +72,7 @@ summary**, then click **Attach demo documents** on screen 1:
 | ALR-2026-000103 | Marigold Wholesale Pvt Ltd | Round Dollar Transaction |
 | ALR-2026-000123 | Kestrel Trading Pvt Ltd (as in the design) | Wire Structuring + Round Dollar + Pattern of Funds |
 
-Each set has an alert report (PDF), transactions (XLSX, with 2 malformed rows and 18 rows outside the review period),
+Each set has an alert report (PDF), transactions (XLSX, with 2 malformed rows – one auto-corrected amount typo in 101–103, otherwise left for the analyst – and 18 rows outside the review period),
 KYC profile (PDF), counterparties (CSV), prior case history (DOCX) and an RFI response (JPG scan). Regenerate them with
 `npm run seed:generate` (fixed random seeds; needs Playwright Chromium for the JPG). The seed also adds ~40 approved
 historical cases flagged `synthetic_history`, so the dashboard has data.

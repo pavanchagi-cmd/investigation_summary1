@@ -197,7 +197,7 @@ export function buildAlert123(): SeedAlert {
     counterparties: Object.values(C),
     txns: withIds,
     malformed: [
-      { excelRow: 118, cells: { Amount: "4,9OO.00" }, problem: "letter O in amount" },
+      { excelRow: 118, cells: { Amount: "4.9OO.00" }, problem: "letter O in amount; 4.9 or 4,900 is ambiguous" },
       { excelRow: 241, cells: { Date: null }, problem: "missing date" },
     ],
     priorCases: [

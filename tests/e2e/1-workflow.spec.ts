@@ -23,7 +23,7 @@ test("analyst completes ALR-2026-000123 from alert entry to Word export", async 
   await expect(page.getByText("18 txns")).toBeVisible();
   await expect(page.getByText("4,142,880")).toBeVisible();
   // Malformed rows are shown, never dropped.
-  await expect(page.getByText(/Row 118: Amount: amount "4,9OO\.00" contains letters/)).toBeVisible();
+  await expect(page.getByText(/Row 118: Amount: amount "4\.9OO\.00" contains letters/)).toBeVisible();
   await axe(page, "screen 1");
   await page.getByRole("button", { name: "Exclude with reason" }).click();
   await page.fill("#exclude-reason", "Malformed test rows confirmed with operations");

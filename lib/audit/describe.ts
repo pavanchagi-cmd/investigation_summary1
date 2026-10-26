@@ -34,6 +34,10 @@ export function describeAudit(e: Entry): string {
     case "column_mapping_set":
       return `${who} set the column mapping / currency for a document`;
     case "parse_issue_resolved":
+      if (a.resolution === "auto_corrected") {
+        const ch = (a.changes as { row: string; from: string; to: string }[] | undefined) ?? [];
+        return `System auto-corrected ${ch.map((c) => `${c.row} "${c.from}" → ${c.to}`).join("; ")} in ${a.fileName} (analyst to verify)`;
+      }
       return `${who} ${a.resolution === "excluded" ? `excluded ${b.row}: "${a.reason}"` : a.resolution === "fixed" ? `fixed ${b.row}` : `tried to fix ${b.row} (still failing)`}`;
     case "parse_issues_bulk_excluded":
       return `${who} excluded ${a.count} issue(s) with reason "${a.reason}"`;

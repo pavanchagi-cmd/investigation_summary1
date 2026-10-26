@@ -11,10 +11,13 @@ for (const [alert, scenario, matches] of [
     // analyst2 also owns ALR-2026-000101 from the threshold test in 1-workflow.spec.ts.
     await login(page, "analyst2@demo.local");
     const url = await startDemoCase(page, alert);
+    // The unambiguous typo is corrected on upload and shown for checking; the missing date is left to the analyst.
+    await expect(page.getByText("1 value auto-corrected – analyst to verify")).toBeVisible();
+    await expect(page.getByText('Row 57 · amount: "1,2O5.40" → 1,205.40')).toBeVisible();
     await page.getByRole("button", { name: "Exclude with reason" }).click();
     await page.fill("#exclude-reason", "Malformed test rows");
-    await page.getByRole("button", { name: /Exclude 2 issues/ }).click();
-    await expect(page.getByText(/2 excluded/)).toBeVisible();
+    await page.getByRole("button", { name: /Exclude 1 issue/ }).click();
+    await expect(page.getByText(/1 excluded/)).toBeVisible();
 
     await page.goto(`${url}/purpose`);
     await expect(page.locator("div.rounded-lg", { hasText: scenario }).first()).toContainText(matches);

@@ -9,6 +9,7 @@ import {
   parseDateValue,
   parseDirection,
   parseTxnType,
+  suggestAmountFix,
 } from "@/lib/parsing/values";
 import { DIRECTION_FROM_SIGN, normaliseTransactions, type RawRow } from "@/lib/parsing/normalise";
 import { detectDocType } from "@/lib/parsing/detect";
@@ -235,5 +236,23 @@ describe("document type detection", () => {
     expect(detectDocType("export.xlsx", ["Value Date", "Amount", "Narrative"])).toBe("transaction_list");
     expect(detectDocType("list.csv", ["Name", "Bank", "Account Number"])).toBe("counterparty_details");
     expect(detectDocType("scan001.pdf")).toBeNull();
+  });
+});
+
+describe("suggestAmountFix (unambiguous amount typos only)", () => {
+  it.each([
+    ["2O4.50", "204.50"],
+    ["4,9OO.00", "4,900.00"],
+    ["1,2O5.40", "1,205.40"],
+    ["88.25.00", "88.25"],
+    ["1l0.00", "110.00"],
+    ["12..50", "12.50"],
+  ])("%s → %s", (raw, fixed) => {
+    expect(suggestAmountFix(raw)).toBe(fixed);
+    expect(parseAmount(fixed).ok).toBe(true);
+  });
+
+  it.each([["USD abc"], ["4.9OO.00"], ["1.234.567"], ["12.5.3"], ["N/A"], ["OO"], [""], ["twelve"]])("leaves %s for the analyst", (raw) => {
+    expect(suggestAmountFix(raw)).toBeNull();
   });
 });

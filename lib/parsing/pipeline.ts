@@ -12,6 +12,8 @@ import { normaliseTransactions, type RawRow, type RowIssue, type NormalisedTxn }
 import { classifyDocument, extractDocument, type DocInput } from "./extract";
 import { parseCounterpartyDetails } from "./counterparty-details";
 import { prefillCase } from "./prefill";
+import { AUTO_CORRECTED_PREFIX, suggestAmountFix } from "./values";
+import { logAudit } from "@/lib/audit/log";
 import type { TransactionTableExtraction } from "@/lib/llm/schemas";
 
 const STRUCTURED = new Set(["xlsx", "xls", "csv"]);
@@ -163,13 +165,29 @@ async function storeTransactions(
     if (p.resolution === "excluded") excluded.set(p.sourceRowOrPage, p);
   }
 
-  const result = normaliseTransactions(headers, rows, {
-    documentId: doc.id,
-    documentCurrency: doc.currency ?? statedCurrency,
-    fx: cfg.fx_rates,
-    overrides: doc.columnMapping,
-    fixes,
-  });
+  const normalise = () =>
+    normaliseTransactions(headers, rows, {
+      documentId: doc.id,
+      documentCurrency: doc.currency ?? statedCurrency,
+      fx: cfg.fx_rates,
+      overrides: doc.columnMapping,
+      fixes,
+    });
+  let result = normalise();
+
+  // Auto-correct unambiguous amount typos. Each one is stored as a fixed issue showing the original
+  // value, so it stays visible and the analyst can change it (never a silent change).
+  const autoFixed: { issue: RowIssue; field: string; value: string }[] = [];
+  for (const i of result.issues) {
+    if (!i.field || !["amount", "debit", "credit"].includes(i.field) || excluded.has(i.sourceRowOrPage)) continue;
+    const key = `${i.sourceRowOrPage}|${i.field}`;
+    if (fixes.has(key)) continue;
+    const value = suggestAmountFix(i.rawValue);
+    if (!value) continue;
+    fixes.set(key, value);
+    autoFixed.push({ issue: i, field: i.field, value });
+  }
+  if (autoFixed.length) result = normalise();
   await clearDocumentRows(doc.id);
 
   if (result.missingColumns.length) {
@@ -228,6 +246,21 @@ async function storeTransactions(
       resolvedBy: prev?.resolvedBy ?? null,
     };
   });
+  for (const a of autoFixed) {
+    if (issues.some((i) => i.sourceRowOrPage === a.issue.sourceRowOrPage && i.field === a.field)) continue;
+    issueRows.push({
+      documentId: doc.id,
+      sourceRowOrPage: a.issue.sourceRowOrPage,
+      field: a.field,
+      rawValue: a.issue.rawValue,
+      problem: a.issue.problem,
+      rawRow: a.issue.rawRow,
+      fixedValues: { [a.field]: a.value },
+      resolution: "fixed",
+      resolutionReason: `${AUTO_CORRECTED_PREFIX} "${a.issue.rawValue}" → ${a.value}`,
+      resolvedBy: null,
+    });
+  }
   // Rows fixed or excluded earlier that no longer raise an issue keep their record (counts stay visible).
   const carried = new Set<string>();
   for (const p of previous) {
@@ -257,6 +290,21 @@ async function storeTransactions(
       const ids = inserted.filter((r) => r.row === p.sourceRowOrPage).map((r) => r.id);
       if (ids.length) await db.update(parseIssues).set({ fixedValues: p.fixedValues }).where(inArray(parseIssues.id, ids));
     }
+  }
+  if (autoFixed.length) {
+    await logAudit({
+      caseId: doc.caseId,
+      actorId: null,
+      action: "parse_issue_resolved",
+      entity: "document",
+      entityId: doc.id,
+      before: { row: autoFixed.map((a) => a.issue.sourceRowOrPage).join(", ") },
+      after: {
+        resolution: "auto_corrected",
+        fileName: doc.fileName,
+        changes: autoFixed.map((a) => ({ row: a.issue.sourceRowOrPage, field: a.field, from: a.issue.rawValue, to: a.value })),
+      },
+    });
   }
 
   const open = issueRows.filter((i) => i.resolution === "open").length;

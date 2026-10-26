@@ -1,4 +1,4 @@
-/** Pure value parsers for the transaction normaliser (spec section 5). Never guess. */
+/** Pure value parsers for the transaction normaliser (spec section 5). Never guess: the only repairs are the unambiguous amount typos in suggestAmountFix, which are shown to the analyst. */
 
 export type Parsed<T> = { ok: true; value: T } | { ok: false; problem: string };
 
@@ -119,6 +119,25 @@ export function parseAmount(raw: unknown): Parsed<number> {
   if (!/^\d+(\.\d{1,2})?$/.test(cleaned)) return fail(`amount "${String(raw)}" is not a valid number`);
   const n = Number(cleaned);
   return ok(Math.round((negative ? -n : n) * 100) / 100);
+}
+
+/** Resolution reason on issues the parser corrected itself (shown so the analyst can verify). */
+export const AUTO_CORRECTED_PREFIX = "Auto-corrected";
+
+/**
+ * Repairs an amount that failed to parse when the intended value is unambiguous: letter O/o for
+ * zero, I/l for one, a doubled decimal point, or a stray ".00" after a two-place decimal
+ * ("88.25.00"). Returns the corrected text, or null when a person has to decide.
+ */
+export function suggestAmountFix(raw: unknown): string | null {
+  if (raw == null || typeof raw === "number") return null;
+  const original = String(raw).trim();
+  if (!/\d/.test(original) || !/^[\d.,\s'()$€£₹+\-OoIl]+$/.test(original)) return null;
+  let s = original.replace(/[Oo]/g, "0").replace(/[Il]/g, "1");
+  s = s.replace(/\.{2,}/g, ".");
+  s = s.replace(/^(.*\d\.\d{1,2})\.0+$/, "$1");
+  if (s === original || !parseAmount(s).ok) return null;
+  return s;
 }
 
 const IN_WORDS = new Set(["in", "incoming", "credit", "cr", "c", "receipt", "inward", "inflow", "deposit", "received"]);

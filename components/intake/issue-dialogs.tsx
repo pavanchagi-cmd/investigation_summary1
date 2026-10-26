@@ -34,7 +34,17 @@ function useAction() {
 }
 
 /** Fix: edit the failing values of each row; the row is re-validated on save. */
-export function FixRowsDialog({ caseId, doc, issues }: { caseId: number; doc: DocumentSummary; issues: IssueRow[] }) {
+export function FixRowsDialog({
+  caseId,
+  doc,
+  issues,
+  label = "Fix rows",
+}: {
+  caseId: number;
+  doc: DocumentSummary;
+  issues: IssueRow[];
+  label?: string;
+}) {
   const rows = React.useMemo(() => {
     const m = new Map<string, IssueRow[]>();
     for (const i of issues) m.set(i.sourceRowOrPage, [...(m.get(i.sourceRowOrPage) ?? []), i]);
@@ -43,7 +53,7 @@ export function FixRowsDialog({ caseId, doc, issues }: { caseId: number; doc: Do
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button size="sm">Fix rows</Button>
+        <Button size="sm">{label}</Button>
       </DialogTrigger>
       <DialogContent title={`Fix rows · ${doc.fileName}`} description="Correct the values; each row is validated again when you save it.">
         <div className="space-y-5">
@@ -64,7 +74,12 @@ function fieldsFor(issue: IssueRow): TxnField[] {
 function FixRow({ caseId, row, issues }: { caseId: number; row: string; issues: IssueRow[] }) {
   const fields = [...new Set(issues.flatMap(fieldsFor))];
   const [values, setValues] = React.useState<Record<string, string>>(() =>
-    Object.fromEntries(fields.map((f) => [f, issues.find((i) => i.field === f)?.rawValue ?? ""])),
+    Object.fromEntries(
+      fields.map((f) => {
+        const i = issues.find((x) => x.field === f);
+        return [f, i?.fixedValues?.[f] ?? i?.rawValue ?? ""];
+      }),
+    ),
   );
   const [reason, setReason] = React.useState("");
   const [result, setResult] = React.useState<string[] | null>(null);
