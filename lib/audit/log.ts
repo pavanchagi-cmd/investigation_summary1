@@ -4,6 +4,7 @@ import { auditLog } from "@/lib/db/schema";
 
 export type AuditAction =
   | "case_created"
+  | "alert_number_changed"
   | "document_uploaded"
   | "document_type_changed"
   | "document_reparsed"

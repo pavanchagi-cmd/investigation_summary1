@@ -5,7 +5,7 @@ import { ALL_ROLES, getCaseForUser, getEditableCase, requireRole } from "@/lib/a
 import { getDb } from "@/lib/db";
 import { cases, scenarioEnum, dispositionEnum } from "@/lib/db/schema";
 import { idParam, parseBody, route } from "@/lib/http";
-import { addSubAlert, listSubAlerts, removeSubAlert, setReviewPeriod, updateSubAlert } from "@/lib/cases/service";
+import { addSubAlert, listSubAlerts, removeSubAlert, setAlertNumber, setReviewPeriod, updateSubAlert } from "@/lib/cases/service";
 import { logAudit } from "@/lib/audit/log";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -19,6 +19,7 @@ export const GET = route(async (_req, { params }: Ctx) => {
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD");
 
 const Patch = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("set_alert_number"), alertNumber: z.string().min(1).max(64) }),
   z.object({ action: z.literal("set_review_period"), start: isoDate, end: isoDate }),
   z.object({ action: z.literal("add_sub_alert") }),
   z.object({
@@ -48,6 +49,8 @@ export const PATCH = route(async (req, { params }: Ctx) => {
   const c = await getEditableCase(idParam((await params).id), user);
   const body = await parseBody(req, Patch);
   switch (body.action) {
+    case "set_alert_number":
+      return NextResponse.json({ case: await setAlertNumber(c.id, user, body.alertNumber) });
     case "set_review_period":
       await setReviewPeriod(c.id, user, body.start, body.end);
       break;

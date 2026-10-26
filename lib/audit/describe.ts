@@ -21,6 +21,8 @@ export function describeAudit(e: Entry): string {
   switch (e.action) {
     case "case_created":
       return `${who} created the case (${a.alertNumber})`;
+    case "alert_number_changed":
+      return `${who} changed the alert number: ${b.alertNumber} → ${a.alertNumber}`;
     case "document_uploaded":
       return `${who} uploaded ${a.fileName}`;
     case "document_type_changed":

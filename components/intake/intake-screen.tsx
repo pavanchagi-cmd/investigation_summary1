@@ -92,27 +92,78 @@ function Q1Card({ caseId, alertNumber, readOnly, subAlerts, fields }: Parameters
   const track = useSave();
   const reportNumber = fields.find((f) => f.fieldKey === "report_alert_number");
   const alertDate = fields.find((f) => f.fieldKey === "alert_date");
-  const mismatch = typeof reportNumber?.value === "string" && reportNumber.value !== alertNumber;
+  const reportValue = typeof reportNumber?.value === "string" ? reportNumber.value.trim().toUpperCase() : null;
+  const mismatch = !!reportValue && reportValue !== alertNumber;
   const anyAi = subAlerts.some((s) => s.isAi);
+  const [draft, setDraft] = React.useState(alertNumber);
+  const [numberError, setNumberError] = React.useState<string | null>(null);
+  React.useEffect(() => setDraft(alertNumber), [alertNumber]);
+  const dirty = draft.trim().toUpperCase() !== alertNumber;
 
   async function patch(body: object) {
     await track(api(`/api/cases/${caseId}`, { method: "PATCH", body }));
     router.refresh();
   }
 
+  async function saveNumber(value: string) {
+    setNumberError(null);
+    try {
+      await patch({ action: "set_alert_number", alertNumber: value });
+    } catch (err) {
+      setNumberError((err as Error).message);
+    }
+  }
+
   return (
     <Card>
       <CardHeader title="Q1 · Alert number" aside={anyAi ? <AiDraftBadge /> : null} />
       <Label htmlFor="q1-alert">Alert number (required)</Label>
-      <div className="flex flex-wrap items-center gap-3">
-        <Input id="q1-alert" className="max-w-[420px] font-mono" value={alertNumber} readOnly />
-        <span className="rounded-md bg-ok-soft px-3 py-2 text-[13px] font-medium text-ok">Alert loaded</span>
+      <form
+        className="flex flex-wrap items-center gap-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (dirty && draft.trim()) saveNumber(draft);
+        }}
+      >
+        <Input
+          id="q1-alert"
+          className="max-w-[420px] font-mono"
+          value={draft}
+          readOnly={readOnly}
+          aria-describedby={numberError ? "q1-alert-error" : undefined}
+          onChange={(e) => setDraft(e.target.value)}
+        />
+        {!readOnly && dirty ? (
+          <>
+            <Button type="submit" variant="primary" disabled={!draft.trim()}>
+              Save
+            </Button>
+            <Button type="button" variant="ghost" onClick={() => (setDraft(alertNumber), setNumberError(null))}>
+              Cancel
+            </Button>
+          </>
+        ) : mismatch ? null : (
+          <span className="rounded-md bg-ok-soft px-3 py-2 text-[13px] font-medium text-ok">Alert loaded</span>
+        )}
         <SourceChip source={reportNumber?.sourceRef} />
-      </div>
-      {mismatch ? (
-        <p role="alert" className="mt-2 rounded-md bg-risk-soft px-3 py-2 text-[13px] text-risk">
-          The alert report states alert number {String(reportNumber!.value)}, not {alertNumber}. Check the uploaded report.
+      </form>
+      {numberError ? (
+        <p id="q1-alert-error" role="alert" className="mt-2 text-[13px] text-risk">
+          {numberError}
         </p>
+      ) : null}
+      {mismatch ? (
+        <div role="alert" className="mt-2 flex flex-wrap items-center gap-3 rounded-md bg-risk-soft px-3 py-2 text-[13px] text-risk">
+          <span className="min-w-0 flex-1">
+            The alert report states alert number <span className="font-mono">{reportValue}</span>, not{" "}
+            <span className="font-mono">{alertNumber}</span>. Check the uploaded report, or correct the alert number.
+          </span>
+          {!readOnly ? (
+            <Button size="sm" onClick={() => saveNumber(reportValue!)}>
+              Use {reportValue}
+            </Button>
+          ) : null}
+        </div>
       ) : null}
       {alertDate?.value ? (
         <p className="mt-2 text-[13px] text-muted">
@@ -165,6 +216,7 @@ function SubAlertRow({ s, readOnly, onPatch }: { s: SubAlertView; readOnly: bool
   );
   const [count, setCount] = React.useState(s.triggeringTxnCount?.toString() ?? "");
   const [number, setNumber] = React.useState(s.subAlertNumber);
+  React.useEffect(() => setNumber(s.subAlertNumber), [s.subAlertNumber]);
   const update = (patch: object) => onPatch({ action: "update_sub_alert", id: s.id, patch });
   const id = `sub-${s.id}`;
 

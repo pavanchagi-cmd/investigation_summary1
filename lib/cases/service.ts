@@ -7,12 +7,17 @@ import { logAudit } from "@/lib/audit/log";
 import { HttpError } from "@/lib/http";
 import type { SessionUser } from "@/lib/auth/guard";
 
-export async function createCase(user: SessionUser, alertNumberRaw: string) {
-  const alertNumber = alertNumberRaw.trim().toUpperCase();
+async function validAlertNumber(raw: string) {
+  const alertNumber = raw.trim().toUpperCase();
   const cfg = await getConfig();
   if (!new RegExp(cfg.alert_number_regex).test(alertNumber)) {
     throw new HttpError(400, "Alert number must look like ALR-YYYY-NNNNNN", { field: "alertNumber" });
   }
+  return alertNumber;
+}
+
+export async function createCase(user: SessionUser, alertNumberRaw: string) {
+  const alertNumber = await validAlertNumber(alertNumberRaw);
   const db = await getDb();
   const [existing] = await db.select().from(cases).where(eq(cases.alertNumber, alertNumber)).limit(1);
   if (existing) {
@@ -31,6 +36,47 @@ export async function createCase(user: SessionUser, alertNumberRaw: string) {
   });
   await logAudit({ caseId: row.id, actorId: user.id, action: "case_created", entity: "case", entityId: row.id, after: { alertNumber } });
   return { case: row, created: true };
+}
+
+/**
+ * Analyst correction of the Q1 alert number (e.g. a typo, or the uploaded report names another alert).
+ * Sub-alert numbers built from the old number are renamed unless the new number already exists.
+ */
+export async function setAlertNumber(caseId: number, user: SessionUser, raw: string) {
+  const alertNumber = await validAlertNumber(raw);
+  const db = await getDb();
+  const [c] = await db.select().from(cases).where(eq(cases.id, caseId));
+  if (!c) throw new HttpError(404, "Case not found");
+  if (c.alertNumber === alertNumber) return c;
+  const [other] = await db.select({ id: cases.id }).from(cases).where(eq(cases.alertNumber, alertNumber)).limit(1);
+  if (other) throw new HttpError(409, `Another case already uses ${alertNumber}. Open that case from My cases instead.`);
+  const [row] = await db.update(cases).set({ alertNumber }).where(eq(cases.id, caseId)).returning();
+  await db
+    .insert(caseFields)
+    .values({ caseId, question: "q1", fieldKey: "alert_number", analystValue: alertNumber, status: "confirmed" })
+    .onConflictDoUpdate({
+      target: [caseFields.caseId, caseFields.question, caseFields.fieldKey],
+      set: { analystValue: alertNumber, status: "confirmed" },
+    });
+  const subs = await db.select().from(subAlerts).where(eq(subAlerts.caseId, caseId));
+  const taken = new Set(subs.map((x) => x.subAlertNumber));
+  for (const x of subs) {
+    if (!x.subAlertNumber.startsWith(`${c.alertNumber}-`)) continue;
+    const renamed = alertNumber + x.subAlertNumber.slice(c.alertNumber.length);
+    if (taken.has(renamed)) continue;
+    await db.update(subAlerts).set({ subAlertNumber: renamed }).where(eq(subAlerts.id, x.id));
+    taken.add(renamed);
+  }
+  await logAudit({
+    caseId,
+    actorId: user.id,
+    action: "alert_number_changed",
+    entity: "case",
+    entityId: caseId,
+    before: { alertNumber: c.alertNumber },
+    after: { alertNumber },
+  });
+  return row;
 }
 
 /** Recomputes in_period for every transaction after Q2 changes. */
