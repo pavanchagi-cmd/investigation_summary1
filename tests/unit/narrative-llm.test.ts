@@ -205,3 +205,19 @@ describe("audit descriptions", () => {
     ).toBe("A. Rao edited §3 and §2 (+14 / −6)");
   });
 });
+
+describe("narrative body formatting", () => {
+  it("turns a lead-in line followed by bullets into a paragraph and a list", () => {
+    const doc = sectionsToDoc([{ key: "analyst_considerations", body: "For escalation:\n- Volume 70× expected\n- High-risk country\n\nAgainst escalation:\n- Long-standing client" }]);
+    const nodes = docSections(doc).find((s) => s.key === "analyst_considerations")!.nodes;
+    expect(nodes.map((n) => n.type)).toEqual(["paragraph", "bulletList", "paragraph", "bulletList"]);
+    expect(docToText(doc)).toMatch(/For escalation:\n+- Volume 70× expected\n- High-risk country/);
+  });
+
+  it("uses prompt version 2 (plain language, top-6 counterparty focus)", async () => {
+    const { loadPrompt } = await import("@/lib/llm/prompts");
+    const p = loadPrompt("drafter-system");
+    expect(p.version).toBe("drafter-system@2");
+    expect(p.text).toContain("one bullet for each entry in counterparties_top6");
+  });
+});

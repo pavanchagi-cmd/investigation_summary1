@@ -9,16 +9,35 @@ export const headingText = (key: SectionKey) => `${SECTION_KEYS.indexOf(key) + 1
 function paragraphsFromBody(body: string): PMNode[] {
   const blocks = body.replace(/\r/g, "").split(/\n{2,}/).map((b) => b.trim()).filter(Boolean);
   const out: PMNode[] = [];
+  const isBullet = (l: string) => /^\s*[-•*]\s+/.test(l);
   for (const b of blocks) {
-    const lines = b.split("\n");
-    if (lines.every((l) => /^\s*[-•*]\s+/.test(l))) {
-      out.push({
-        type: "bulletList",
-        content: lines.map((l) => ({ type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: l.replace(/^\s*[-•*]\s+/, "") }] }] })),
-      });
-    } else {
-      out.push({ type: "paragraph", content: [{ type: "text", text: lines.join(" ") }] });
+    // Consecutive bullet lines become a list; other lines (e.g. a lead-in such as "For escalation:") a paragraph.
+    let para: string[] = [];
+    let items: string[] = [];
+    const flushPara = () => {
+      if (para.length) out.push({ type: "paragraph", content: [{ type: "text", text: para.join(" ") }] });
+      para = [];
+    };
+    const flushList = () => {
+      if (items.length) {
+        out.push({
+          type: "bulletList",
+          content: items.map((t) => ({ type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: t }] }] })),
+        });
+      }
+      items = [];
+    };
+    for (const l of b.split("\n")) {
+      if (isBullet(l)) {
+        flushPara();
+        items.push(l.replace(/^\s*[-•*]\s+/, "").trim());
+      } else if (l.trim()) {
+        flushList();
+        para.push(l.trim());
+      }
     }
+    flushPara();
+    flushList();
   }
   return out.length ? out : [{ type: "paragraph" }];
 }
