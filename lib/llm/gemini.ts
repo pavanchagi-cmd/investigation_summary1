@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import { GoogleGenAI, type Part } from "@google/genai";
 import { z, type ZodType } from "zod";
 import { logAudit } from "@/lib/audit/log";
+import { HttpError } from "@/lib/http";
 import { mockResponse } from "./mock";
 
 /**
@@ -13,12 +14,14 @@ import { mockResponse } from "./mock";
 
 export type LlmTask = "extraction" | "classification" | "q5_summaries" | "narrative" | "narrative_section";
 
-export class LlmError extends Error {
+/** A failed Gemini call. An HttpError (502), so API routes return its readable message to the browser. */
+export class LlmError extends HttpError {
   constructor(
     message: string,
     public readonly retryable = false,
   ) {
-    super(message);
+    super(502, message);
+    this.name = "LlmError";
   }
 }
 
@@ -80,7 +83,7 @@ const ALLOWED_SCHEMA_KEYS = new Set([
 
 /** Zod → JSON Schema restricted to the keywords Gemini's responseJsonSchema accepts. */
 export function toResponseSchema(schema: ZodType): unknown {
-  const raw = z.toJSONSchema(schema, { unrepresentable: "any" });
+  const raw = z.toJSONSchema(schema, { unrepresentable: "any", io: "input" });
   const clean = (node: unknown): unknown => {
     if (Array.isArray(node)) return node.map(clean);
     if (!node || typeof node !== "object") return node;

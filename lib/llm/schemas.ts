@@ -203,9 +203,11 @@ export const DISPOSITION_PENDING = "to be made by the analyst (choose Closed, RF
 export const COMMENTS_PENDING = "none saved yet (write them in the case decision comments box and click Save comments)";
 
 export const NarrativeSection = z.object({ key: z.enum(AI_SECTION_KEYS), heading: z.string(), body: z.string() });
+/** Tolerant of a repeated section (the first one is kept); both AI sections must be present. */
 export const NarrativeOutput = z
   .object({ sections: z.array(NarrativeSection) })
-  .refine((o) => AI_SECTION_KEYS.every((k) => o.sections.filter((s) => s.key === k).length === 1), {
-    message: `Return exactly one section for each key: ${AI_SECTION_KEYS.join(", ")}`,
-  });
+  .refine((o) => AI_SECTION_KEYS.every((k) => o.sections.some((s) => s.key === k && s.body.trim())), {
+    message: `Return one non-empty section for each key: ${AI_SECTION_KEYS.join(", ")}`,
+  })
+  .transform((o) => ({ sections: AI_SECTION_KEYS.map((k) => o.sections.find((s) => s.key === k && s.body.trim())!) }));
 export type NarrativeOutput = z.infer<typeof NarrativeOutput>;

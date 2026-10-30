@@ -122,11 +122,11 @@ describe("diff and % AI text kept", () => {
 });
 
 describe("LLM schemas", () => {
-  it("narrative output must contain each AI-drafted section exactly once, and never the disposition", () => {
+  it("narrative output must contain each AI-drafted section, and never the disposition", () => {
     const ok = { sections: AI_SECTION_KEYS.map((key) => ({ key, heading: key, body: "x" })) };
     expect(NarrativeOutput.safeParse(ok).success).toBe(true);
     expect(NarrativeOutput.safeParse({ sections: ok.sections.slice(1) }).success).toBe(false);
-    expect(NarrativeOutput.safeParse({ sections: [...ok.sections, ok.sections[0]] }).success).toBe(false);
+    expect(NarrativeOutput.safeParse({ sections: [...ok.sections, ok.sections[0]] }).success).toBe(true); // repeated: first kept
     expect(NarrativeOutput.safeParse({ sections: [...ok.sections, { key: "disposition", heading: "d", body: "Closed" }] }).success).toBe(false);
   });
 
@@ -170,6 +170,30 @@ describe("LLM schemas", () => {
     expect(json).not.toContain("9007199254740991");
     expect(json).toContain('"page":{"type":["integer","null"]}');
     expect(json.length).toBeLessThan(8000); // was 10.2 KB before the bounds and anyOf were removed
+  });
+
+  it("sends Gemini a real schema for the narrative (the output transform must not blank it)", async () => {
+    const { toResponseSchema } = await import("@/lib/llm/gemini");
+    const json = JSON.stringify(toResponseSchema(NarrativeOutput));
+    expect(json).toContain('"sections"');
+    expect(json).toContain('"enum":["alert_overview","counterparty_summary"]');
+  });
+
+  it("accepts a repeated section (keeps the first) but not a missing one", () => {
+    const a = { key: "alert_overview", heading: "h", body: "First." };
+    const c = { key: "counterparty_summary", heading: "h", body: "- A – x; y" };
+    const parsed = NarrativeOutput.parse({ sections: [a, c, { ...a, body: "Second." }] });
+    expect(parsed.sections.map((s) => s.body)).toEqual(["First.", "- A – x; y"]);
+    expect(NarrativeOutput.safeParse({ sections: [a] }).success).toBe(false);
+    expect(NarrativeOutput.safeParse({ sections: [a, { ...c, body: " " }] }).success).toBe(false);
+  });
+
+  it("a failed Gemini call reaches the browser with its reason, not 'Something went wrong'", async () => {
+    const { LlmError } = await import("@/lib/llm/gemini");
+    const { errorResponse } = await import("@/lib/http");
+    const res = errorResponse(new LlmError("Gemini is rate-limiting requests (429). Wait a minute, then click Retry."));
+    expect(res.status).toBe(502);
+    expect(await res.json()).toMatchObject({ error: "Gemini is rate-limiting requests (429). Wait a minute, then click Retry." });
   });
 
   it("explains why a Gemini call failed", async () => {
