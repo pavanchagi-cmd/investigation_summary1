@@ -216,6 +216,21 @@ describe("Gemini wrapper (mock mode)", () => {
     expect(text).not.toMatch(/we recommend|should be escalated|should be closed/i);
   });
 
+  it("the mock counterparty section gives only relationship and purpose", () => {
+    const out = mockNarrative({
+      alert: { alert_number: "ALR-2026-000506", alert_date: "2026-06-03" },
+      sub_alerts: [],
+      review_period: { start: "2026-05-01", end: "2026-05-31", in_period_txn_count: 12, total_flow: 166675, currency: "USD", excluded_txn_count: 3 },
+      client_kyc: {},
+      counterparties_top6: [{ name: "Westbridge University", total_amount: 29200, pct_of_client_flow: 17.5, direction: "receives funds from the client", flags: ["WS-04"] }],
+      relationship_summaries: [{ counterparty: "Westbridge University", relationship_type: "education", summary: "Tuition fees for the client's son.", review_status: "agree" }],
+      scenario_findings: [],
+    });
+    const body = out.sections.find((s) => s.key === "counterparty_summary")!.body;
+    expect(body).toContain("- Westbridge University – education; Tuition fees for the client's son.");
+    expect(body).not.toMatch(/USD|29,200|WS-04|agreed/);
+  });
+
   it("mock Q5 summaries stay within the schema", () => {
     const out = mockQ5({
       client_kyc: { expected_activity: { countries: ["IN"] } },
@@ -269,10 +284,11 @@ describe("narrative body formatting", () => {
     expect(docToText(doc)).toMatch(/For escalation:\n+- Volume 70× expected\n- High-risk country/);
   });
 
-  it("uses prompt version 3 (two AI sections; the disposition is the analyst's)", async () => {
+  it("uses prompt version 4 (two AI sections; counterparties by relationship and purpose only)", async () => {
     const { loadPrompt } = await import("@/lib/llm/prompts");
     const p = loadPrompt("drafter-system");
-    expect(p.version).toBe("drafter-system@3");
+    expect(p.version).toBe("drafter-system@4");
+    expect(p.text).toContain("Do not mention amounts, transaction counts, dates, scenarios, red flags or review");
     expect(p.text).toContain("never write a disposition");
     expect(p.text).toContain("for each entry in counterparties_top6");
   });

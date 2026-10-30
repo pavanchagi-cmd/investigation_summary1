@@ -86,7 +86,7 @@ type NarrIn = {
   review_period: { start: string | null; end: string | null; in_period_txn_count: number; total_flow: number; currency: string; excluded_txn_count: number };
   client_kyc: Record<string, unknown>;
   counterparties_top6: { name: string; total_amount: number; pct_of_client_flow: number; direction: string; flags: string[] }[];
-  relationship_summaries: { counterparty: string; summary: string; review_status: string | null }[];
+  relationship_summaries: { counterparty: string; relationship_type?: string | null; summary: string; review_status: string | null }[];
   scenario_findings: { scenario: string; summary: string; matched_count: number; dismissed: boolean; dismiss_reason: string | null }[];
   analyst_notes?: string;
   section_key?: AiSectionKey;
@@ -98,8 +98,6 @@ const NAMES: Record<string, string> = {
   round_dollar: "Round Dollar Transaction",
   large_amount: "Large Amount Transaction",
 };
-
-const REVIEW: Record<string, string> = { agree: "analyst agreed", edited: "analyst edited", needs_rfi: "needs RFI" };
 
 function sectionBody(key: AiSectionKey, i: NarrIn): string {
   const rp = i.review_period;
@@ -114,10 +112,11 @@ function sectionBody(key: AiSectionKey, i: NarrIn): string {
         ...dismissed.map((f) => `${NAMES[f.scenario]} was dismissed by the analyst: "${f.dismiss_reason}".`),
       ].join(" ");
     case "counterparty_summary":
-      return `Money between the client and the six main counterparties:\n${i.counterparties_top6
+      return `The six main counterparties and the purpose of the money:\n${i.counterparties_top6
         .map((c) => {
           const r = i.relationship_summaries.find((x) => x.counterparty === c.name);
-          return `- ${c.name}: ${c.direction}, ${rp.currency} ${fmt(c.total_amount)} (${c.pct_of_client_flow.toFixed(1)}% of flow). Purpose: ${r?.summary ?? "not provided"}${r?.review_status ? ` (${REVIEW[r.review_status] ?? r.review_status})` : ""}.${c.flags.length ? ` Red flags: ${c.flags.join(", ")}.` : ""}`;
+          const rel = r?.relationship_type ? r.relationship_type.replace(/_/g, " ") : "relationship not provided in the documents";
+          return `- ${c.name} – ${rel}; ${r?.summary ?? "purpose not provided in the documents"}`;
         })
         .join("\n")}`;
   }
