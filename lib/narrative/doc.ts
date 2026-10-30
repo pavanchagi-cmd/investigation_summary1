@@ -1,4 +1,4 @@
-import { DISPOSITION_PENDING, DISPOSITION_SHORT, SECTION_HEADINGS, SECTION_KEYS, type SectionKey } from "@/lib/llm/schemas";
+import { COMMENTS_PENDING, DISPOSITION_PENDING, DISPOSITION_SHORT, LEGACY_SECTION_HEADINGS, SECTION_HEADINGS, SECTION_KEYS, type SectionKey } from "@/lib/llm/schemas";
 
 /** Minimal TipTap / ProseMirror JSON types used on the server and in the browser. */
 export type PMNode = { type: string; attrs?: Record<string, unknown>; content?: PMNode[]; text?: string; marks?: { type: string }[] };
@@ -6,11 +6,31 @@ export type PMDoc = { type: "doc"; content: PMNode[] };
 
 export const headingText = (key: SectionKey) => `${SECTION_KEYS.indexOf(key) + 1}. ${SECTION_HEADINGS[key]}`;
 
+/** The section a level-2 heading belongs to, including earlier wordings of the same heading. */
+export function sectionKeyForHeading(text: string): SectionKey | null {
+  const t = text.trim().toLowerCase();
+  return (
+    SECTION_KEYS.find(
+      (k) =>
+        headingText(k).toLowerCase() === t ||
+        (LEGACY_SECTION_HEADINGS[k] ?? []).some((h) => `${SECTION_KEYS.indexOf(k) + 1}. ${h}`.toLowerCase() === t),
+    ) ?? null
+  );
+}
+
+/** Gemini sometimes writes a list inline ("listed below. - A … - B …"); put each item on its own line. */
+function splitInlineBullets(block: string): string {
+  if (/^\s*[-•*]\s+/m.test(block)) return block;
+  const split = block.replace(/([.:;])\s+[-•]\s+(?=\S)/g, "$1\n- ");
+  return (split.match(/\n- /g) ?? []).length >= 2 ? split : block;
+}
+
 function paragraphsFromBody(body: string): PMNode[] {
   const blocks = body.replace(/\r/g, "").split(/\n{2,}/).map((b) => b.trim()).filter(Boolean);
   const out: PMNode[] = [];
   const isBullet = (l: string) => /^\s*[-•*]\s+/.test(l);
-  for (const b of blocks) {
+  for (const raw of blocks) {
+    const b = splitInlineBullets(raw);
     // Consecutive bullet lines become a list; other lines (e.g. a lead-in such as "For escalation:") a paragraph.
     let para: string[] = [];
     let items: string[] = [];
@@ -42,17 +62,19 @@ function paragraphsFromBody(body: string): PMNode[] {
   return out.length ? out : [{ type: "paragraph" }];
 }
 
-/** Section 3 text: the analyst's disposition in one word, or a note that it is still open. */
-export function dispositionText(disposition: string | null | undefined) {
-  return (disposition && DISPOSITION_SHORT[disposition]) || DISPOSITION_PENDING;
+/** Section 3 text: the analyst's decision in one word and the comments the analyst saved. */
+export function dispositionText(disposition: string | null | undefined, comments?: string | null) {
+  const decision = (disposition && DISPOSITION_SHORT[disposition]) || DISPOSITION_PENDING;
+  const note = comments?.trim() ? comments.trim() : COMMENTS_PENDING;
+  return `Decision: ${decision}\n\nAnalyst comments: ${note}`;
 }
 
 /** Gemini sections + the analyst's disposition → TipTap JSON (headings are the fixed section headings). */
-export function sectionsToDoc(sections: { key: SectionKey; body: string }[], disposition: string | null = null): PMDoc {
+export function sectionsToDoc(sections: { key: SectionKey; body: string }[], disposition: string | null = null, comments: string | null = null): PMDoc {
   const content: PMNode[] = [];
   for (const key of SECTION_KEYS) {
     const s = sections.find((x) => x.key === key);
-    const body = key === "disposition" ? dispositionText(disposition) : (s?.body ?? "Not provided in the documents.");
+    const body = key === "disposition" ? dispositionText(disposition, comments) : (s?.body ?? "Not provided in the documents.");
     content.push({ type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: headingText(key) }] });
     content.push(...paragraphsFromBody(body));
   }
@@ -81,7 +103,7 @@ export function docSections(doc: PMDoc): DocSection[] {
   for (const n of doc.content ?? []) {
     if (n.type === "heading") {
       const text = nodeText(n).trim();
-      const key = SECTION_KEYS.find((k) => headingText(k).toLowerCase() === text.toLowerCase()) ?? null;
+      const key = sectionKeyForHeading(text);
       if (key || !cur || NUMBERED_HEADING.test(text)) {
         cur = { key, heading: text, text: "", nodes: [] };
         out.push(cur);
@@ -113,11 +135,12 @@ export function replaceSection(doc: PMDoc, key: SectionKey, body: string): PMDoc
   let replaced = false;
   for (const n of doc.content ?? []) {
     if (n.type === "heading") {
-      const text = nodeText(n).trim().toLowerCase();
-      const isTarget = text === headingText(key).toLowerCase();
-      const isOther = SECTION_KEYS.some((k) => headingText(k).toLowerCase() === text) || NUMBERED_HEADING.test(text);
+      const text = nodeText(n).trim();
+      const isTarget = sectionKeyForHeading(text) === key;
+      const isOther = sectionKeyForHeading(text) != null || NUMBERED_HEADING.test(text);
       if (isTarget) {
-        content.push(n, ...paragraphsFromBody(body));
+        // Re-written with the current heading wording (e.g. "3. Disposition" → "3. Case decision").
+        content.push({ ...n, content: [{ type: "text", text: headingText(key) }] }, ...paragraphsFromBody(body));
         skipping = true;
         replaced = true;
         continue;
@@ -136,7 +159,17 @@ export function hasSection(doc: PMDoc, key: SectionKey) {
   return docSections(doc).some((s) => s.key === key);
 }
 
-/** Puts the analyst's disposition into section 3; older narratives without that section are left as they are. */
-export function withDisposition(doc: PMDoc, disposition: string | null | undefined): PMDoc {
-  return hasSection(doc, "disposition") ? replaceSection(doc, "disposition", dispositionText(disposition)) : doc;
+/** Puts the analyst's decision and comments into section 3; older narratives without that section are left as they are. */
+export function withDisposition(doc: PMDoc, disposition: string | null | undefined, comments?: string | null): PMDoc {
+  return hasSection(doc, "disposition") ? replaceSection(doc, "disposition", dispositionText(disposition, comments)) : doc;
+}
+
+/** Splits paragraphs that hold an inline list into a paragraph and a bullet list (display of earlier drafts). */
+export function tidyInlineLists(doc: PMDoc): PMDoc {
+  const content = (doc.content ?? []).flatMap((n) => {
+    if (n.type !== "paragraph" || (n.content ?? []).some((c) => c.type !== "text" || c.marks?.length)) return [n];
+    const text = nodeText(n);
+    return splitInlineBullets(text) === text ? [n] : paragraphsFromBody(text);
+  });
+  return { ...doc, content };
 }

@@ -187,8 +187,11 @@ export type AiSectionKey = (typeof AI_SECTION_KEYS)[number];
 export const SECTION_HEADINGS: Record<SectionKey, string> = {
   alert_overview: "Alert number and scenarios",
   counterparty_summary: "Transactions with the six counterparties",
-  disposition: "Disposition",
+  disposition: "Case decision",
 };
+
+/** Earlier headings still recognised in saved narratives (renamed when the section is next updated). */
+export const LEGACY_SECTION_HEADINGS: Partial<Record<SectionKey, string[]>> = { disposition: ["Disposition"] };
 
 /** One-word disposition shown in section 3. */
 export const DISPOSITION_SHORT: Record<string, string> = {
@@ -196,7 +199,8 @@ export const DISPOSITION_SHORT: Record<string, string> = {
   request_info: "RFI",
   escalate_sar: "Escalation",
 };
-export const DISPOSITION_PENDING = "To be decided by the analyst (choose Closed, RFI or Escalation in the Disposition panel).";
+export const DISPOSITION_PENDING = "to be made by the analyst (choose Closed, RFI or Escalation in the Disposition panel)";
+export const COMMENTS_PENDING = "none saved yet (write them in the case decision comments box and click Save comments)";
 
 export const NarrativeSection = z.object({ key: z.enum(AI_SECTION_KEYS), heading: z.string(), body: z.string() });
 export const NarrativeOutput = z

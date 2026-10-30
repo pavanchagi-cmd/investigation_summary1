@@ -14,8 +14,8 @@ import { AiDraftBadge } from "@/components/case/badges";
 import { useSave } from "@/components/case/save-status";
 import { api } from "@/lib/client/api";
 import { DISPOSITION_EVENT, narrativeFlush } from "@/lib/client/flush";
-import { AI_SECTION_KEYS, SECTION_HEADINGS, SECTION_KEYS, type AiSectionKey, type SectionKey } from "@/lib/llm/schemas";
-import { docSections, headingText, withDisposition, type PMDoc } from "@/lib/narrative/doc";
+import { AI_SECTION_KEYS, SECTION_HEADINGS, type AiSectionKey, type SectionKey } from "@/lib/llm/schemas";
+import { docSections, sectionKeyForHeading, withDisposition, type PMDoc } from "@/lib/narrative/doc";
 import type { SectionDiff } from "@/lib/narrative/diff";
 import { cn } from "@/lib/utils";
 import { DocView } from "./doc-view";
@@ -98,7 +98,7 @@ export function NarrativeWorkspace({
       let current: SectionKey = "alert_overview";
       ed.state.doc.forEach((node, offset) => {
         if (offset > pos || node.type.name !== "heading") return;
-        const k = SECTION_KEYS.find((key) => headingText(key).toLowerCase() === node.textContent.trim().toLowerCase());
+        const k = sectionKeyForHeading(node.textContent);
         if (k) current = k;
       });
       setCursorSection(current);
@@ -111,13 +111,14 @@ export function NarrativeWorkspace({
     editor?.setEditable(!locked);
   }, [editor, locked]);
 
-  // Section 3 follows the analyst's choice in the Disposition panel (an analyst edit, saved like any other).
+  // Section 3 follows the analyst's decision and saved comments in the Disposition panel (an analyst edit, saved like any other).
   React.useEffect(() => {
     const onDisposition = (e: Event) => {
       const ed = editorRef.current;
       if (!ed || locked) return;
       const current = ed.getJSON() as PMDoc;
-      const next = withDisposition(current, (e as CustomEvent<string | null>).detail);
+      const { disposition, comments } = (e as CustomEvent<{ disposition: string | null; comments: string }>).detail;
+      const next = withDisposition(current, disposition, comments);
       if (JSON.stringify(next) !== JSON.stringify(current)) ed.commands.setContent(next, { emitUpdate: true });
     };
     window.addEventListener(DISPOSITION_EVENT, onDisposition);

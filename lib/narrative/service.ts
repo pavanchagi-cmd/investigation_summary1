@@ -46,7 +46,7 @@ export async function generateNarrative(c: Case, user: SessionUser) {
     actorId: user.id,
     mockInput: input,
   });
-  const doc = sectionsToDoc(res.data.sections, c.disposition);
+  const doc = sectionsToDoc(res.data.sections, c.disposition, c.rationale);
   const db = await getDb();
   const [row] = await db
     .insert(narratives)
@@ -146,7 +146,7 @@ export async function approveBlockers(c: Case): Promise<string[]> {
   const progress = await getProgress(c);
   const blockers = [...progress.approveBlockers];
   if (!c.disposition) blockers.push("Choose a disposition");
-  if ((c.rationale ?? "").trim().length < 20) blockers.push("Write a rationale of at least 20 characters");
+  if ((c.rationale ?? "").trim().length < 20) blockers.push("Write case decision comments of at least 20 characters");
   return blockers;
 }
 
@@ -158,8 +158,8 @@ export async function approve(c: Case, user: SessionUser) {
   const db = await getDb();
   const versions = await listVersions(c.id);
   let final = versions[versions.length - 1];
-  // Section 3 always states the analyst's own disposition in the approved version.
-  const finalDoc = withDisposition(final.contentJson as PMDoc, c.disposition);
+  // Section 3 always states the analyst's own decision and comments in the approved version.
+  const finalDoc = withDisposition(final.contentJson as PMDoc, c.disposition, c.rationale);
   const finalText = docToText(finalDoc);
   if (final.kind === "ai_draft" || finalText !== final.contentText) {
     // The final version is always an analyst row, even when the AI draft was accepted unchanged.

@@ -46,15 +46,16 @@ export function DispositionPanel({
 
   async function saveDisposition(nextD: string, nextR: string) {
     if (saved.current.d === nextD && saved.current.r === nextR) return;
-    if (saved.current.d !== nextD) window.dispatchEvent(new CustomEvent(DISPOSITION_EVENT, { detail: nextD || null }));
     saved.current = { d: nextD, r: nextR };
+    // Section 3 ("Case decision") of the narrative shows the decision and the saved comments.
+    window.dispatchEvent(new CustomEvent(DISPOSITION_EVENT, { detail: { disposition: nextD || null, comments: nextR } }));
     await track(api(`/api/cases/${caseId}`, { method: "PATCH", body: { action: "set_disposition", disposition: nextD || null, rationale: nextR } }));
     router.refresh();
   }
 
-  const localBlockers = [...blockers.filter((b) => !/disposition|rationale/i.test(b))];
+  const localBlockers = [...blockers.filter((b) => !/disposition|rationale|comments/i.test(b))];
   if (!d) localBlockers.push("Choose a disposition");
-  if (r.trim().length < 20) localBlockers.push("Write a rationale of at least 20 characters");
+  if (r.trim().length < 20) localBlockers.push("Write case decision comments of at least 20 characters");
 
   return (
     <section aria-labelledby="disposition-title" className="rounded-xl border border-line bg-surface p-5">
@@ -88,7 +89,7 @@ export function DispositionPanel({
         ))}
       </fieldset>
       <Label htmlFor="rationale" className="mt-4">
-        Rationale (required)
+        Case decision comments (required)
       </Label>
       <Textarea
         id="rationale"
@@ -96,11 +97,25 @@ export function DispositionPanel({
         readOnly={locked}
         onChange={(e) => setR(e.target.value)}
         onBlur={() => saveDisposition(d, r)}
+        placeholder="Why you chose this decision, e.g. what the RFI must cover"
         aria-describedby="rationale-hint"
       />
-      <p id="rationale-hint" className="mt-1 text-[12px] text-muted">
-        At least 20 characters. Included in exports.
-      </p>
+      <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
+        <p id="rationale-hint" className="text-[12px] text-muted">
+          At least 20 characters. Saved comments appear in section 3 of the narrative and in exports.
+        </p>
+        {!locked ? (
+          <Button size="sm" disabled={r === saved.current.r} onMouseDown={(e) => e.preventDefault()} onClick={() => saveDisposition(d, r)}>
+            {r === saved.current.r && r.trim() ? (
+              <>
+                <Check /> Saved
+              </>
+            ) : (
+              "Save comments"
+            )}
+          </Button>
+        ) : null}
+      </div>
       {locked ? (
         <div className="mt-4 rounded-lg bg-ok-soft px-4 py-3 text-[13.5px] text-ok">
           <div className="flex items-center gap-2 font-semibold">
@@ -143,7 +158,7 @@ export function DispositionPanel({
           ) : null}
         </>
       )}
-      {error ? (
+      {error && !locked ? (
         <p role="alert" className="mt-2 text-[13px] text-risk">
           {error}
         </p>

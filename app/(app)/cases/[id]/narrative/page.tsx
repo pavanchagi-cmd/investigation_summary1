@@ -2,7 +2,7 @@ import Link from "next/link";
 import { loadAnalystCase } from "@/lib/cases/page";
 import { listVersions, narrativeDiff, approveBlockers } from "@/lib/narrative/service";
 import { caseAudit } from "@/lib/audit/queries";
-import type { PMDoc } from "@/lib/narrative/doc";
+import { tidyInlineLists, type PMDoc } from "@/lib/narrative/doc";
 import { formatDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { NarrativeWorkspace } from "@/components/narrative/narrative-workspace";
@@ -48,7 +48,7 @@ export default async function NarrativePage({ params }: { params: Promise<{ id: 
       <NarrativeWorkspace
         key={c.status}
         caseId={c.id}
-        initialDoc={latest.contentJson as PMDoc}
+        initialDoc={tidyInlineLists(latest.contentJson as PMDoc)}
         aiDraft={versions[0].contentJson as PMDoc}
         diff={diff!}
         locked={readOnly}

@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { docSections, docToText, replaceSection, sectionsToDoc, headingText, withDisposition, type PMDoc } from "@/lib/narrative/doc";
+import { docSections, docToText, replaceSection, sectionsToDoc, headingText, tidyInlineLists, withDisposition, type PMDoc } from "@/lib/narrative/doc";
 import { diffDocs } from "@/lib/narrative/diff";
 import {
   AlertReportExtraction,
@@ -28,18 +28,48 @@ describe("narrative document", () => {
     expect(parsed.map((s) => s.key)).toEqual([...SECTION_KEYS]);
     expect(parsed[0].heading).toBe("1. Alert number and scenarios");
     expect(parsed[1].heading).toBe("2. Transactions with the six counterparties");
-    expect(parsed[2].heading).toBe("3. Disposition");
+    expect(parsed[2].heading).toBe("3. Case decision");
     expect(docToText(doc)).toContain("2. TRANSACTIONS WITH THE SIX COUNTERPARTIES\n\nBody of counterparty_summary.");
   });
 
-  it("section 3 shows only the analyst's disposition, in one word", () => {
+  it("section 3 (Case decision) shows only the analyst's decision and saved comments", () => {
     const pending = docSections(sectionsToDoc(sections)).find((s) => s.key === "disposition")!.text;
-    expect(pending).toMatch(/^To be decided by the analyst/);
+    expect(pending).toMatch(/^Decision: to be made by the analyst/);
+    expect(pending).toMatch(/Analyst comments: none saved yet/);
     for (const [value, word] of [["close_nfa", "Closed"], ["request_info", "RFI"], ["escalate_sar", "Escalation"]]) {
-      const doc = withDisposition(sectionsToDoc(sections), value);
-      expect(docSections(doc).find((s) => s.key === "disposition")!.text).toBe(word);
+      const doc = withDisposition(sectionsToDoc(sections), value, "Ask for the Northstar contract and invoices.");
+      expect(docSections(doc).find((s) => s.key === "disposition")!.text).toBe(`Decision: ${word}\n\nAnalyst comments: Ask for the Northstar contract and invoices.`);
       expect(docSections(doc).find((s) => s.key === "alert_overview")!.text).toContain("Body of alert_overview.");
     }
+  });
+
+  it("recognises the earlier '3. Disposition' heading and renames it when section 3 is updated", () => {
+    const old: PMDoc = {
+      type: "doc",
+      content: [
+        { type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: "1. Alert number and scenarios" }] },
+        { type: "paragraph", content: [{ type: "text", text: "Overview." }] },
+        { type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: "3. Disposition" }] },
+        { type: "paragraph", content: [{ type: "text", text: "RFI" }] },
+      ],
+    };
+    expect(docSections(old).map((s) => s.key)).toEqual(["alert_overview", "disposition"]);
+    const next = withDisposition(old, "request_info", "Need the contract.");
+    expect(docSections(next).map((s) => s.heading)).toEqual(["1. Alert number and scenarios", "3. Case decision"]);
+    expect(docSections(next)[1].text).toBe("Decision: RFI\n\nAnalyst comments: Need the contract.");
+  });
+
+  it("splits a list Gemini wrote inline into a lead-in paragraph and bullets", () => {
+    const body = "The top counterparties are listed below. - Northstar Ventures Ltd (XB) – sends funds. - Mohammed Rafi (IN) – receives funds. - Ajay Kulkarni (IN) – receives funds.";
+    const nodes = docSections(sectionsToDoc([{ key: "counterparty_summary", body }])).find((s) => s.key === "counterparty_summary")!.nodes;
+    expect(nodes.map((n) => n.type)).toEqual(["paragraph", "bulletList"]);
+    expect(nodes[1].content).toHaveLength(3);
+    // A single dash in a sentence is left alone.
+    const one = docSections(sectionsToDoc([{ key: "counterparty_summary", body: "Paid on 4 Aug. - see note." }])).find((s) => s.key === "counterparty_summary")!.nodes;
+    expect(one.map((n) => n.type)).toEqual(["paragraph"]);
+    // Stored drafts are tidied for display the same way.
+    const stored: PMDoc = { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: body }] }] };
+    expect(tidyInlineLists(stored).content.map((n) => n.type)).toEqual(["paragraph", "bulletList"]);
   });
 
   it("older 8-section narratives still split into their sections and are not given a section 3", () => {
