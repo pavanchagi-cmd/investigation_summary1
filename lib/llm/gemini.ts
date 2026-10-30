@@ -145,11 +145,24 @@ function statusOf(err: unknown): number | undefined {
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** Readable reason for a failed call. Google's error text describes the request, never the document. */
+/** Longest wait the wrapper honours from a 429's retry delay (routes allow up to 300 s in total). */
+const MAX_RETRY_DELAY_S = 60;
+
+/** What a 429 says about the quota: Google names the quota (per day / per minute) and a retry delay. */
+export function quotaInfo(err: unknown): { daily: boolean; retryAfterS: number | null } {
+  const text = String((err as Error)?.message ?? "");
+  const delay = text.match(/retryDelay\W+(\d+(?:\.\d+)?)s/);
+  return { daily: /PerDay/i.test(text), retryAfterS: delay ? Math.ceil(Number(delay[1])) : null };
+}
+
 export function geminiErrorMessage(status: number | undefined, model: string, err: unknown): string {
   const detail = String((err as Error)?.message ?? "")
     .replace(/\s+/g, " ")
     .slice(0, 200);
-  if (status === 429) return "Gemini is rate-limiting requests (429). Wait a minute, then click Retry.";
+  if (status === 429 && quotaInfo(err).daily) {
+    return `Gemini's daily quota for model "${model}" on this API key is used up (429). It resets at midnight Pacific time. To continue today, add billing to the key in Google AI Studio, or set GEMINI_MODEL in Vercel to another model and redeploy.`;
+  }
+  if (status === 429) return "Gemini is rate-limiting requests (429) and asked to wait longer than the app can. Wait a few minutes, then click Retry.";
   if (status === 404) return `Gemini model "${model}" was not found for this key (404). Check GEMINI_MODEL.`;
   if (status === 401 || status === 403) return `Gemini refused the API key (${status}). Check GEMINI_API_KEY in Vercel.`;
   if (status === 400) return `Gemini rejected the request (400): ${detail || "no detail given"}`;
@@ -192,10 +205,14 @@ export async function callGemini<T>(input: CallInput<T>): Promise<CallResult<T>>
           break;
         } catch (err) {
           const status = statusOf(err);
-          // No status = network error or timeout: worth another try, like 429 and 5xx.
-          const retryable = status == null || status === 429 || status >= 500;
+          const quota = status === 429 ? quotaInfo(err) : null;
+          // No status = network error or timeout: worth another try, like 429 and 5xx. A used-up
+          // daily quota is not: retrying only spends the remaining time.
+          const retryable = !quota?.daily && (status == null || status === 429 || status >= 500);
           if (retryable && attempt < MAX_TRANSPORT_RETRIES) {
-            await sleep(2000 * 2 ** attempt);
+            // Wait as long as Google asks (per-minute limits), within reason; otherwise back off.
+            const wait = quota?.retryAfterS != null && quota.retryAfterS <= MAX_RETRY_DELAY_S ? (quota.retryAfterS + 1) * 1000 : 2000 * 2 ** attempt;
+            await sleep(wait);
             continue;
           }
           outcome = `error_${status ?? "network"}`;

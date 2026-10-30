@@ -196,6 +196,15 @@ describe("LLM schemas", () => {
     expect(await res.json()).toMatchObject({ error: "Gemini is rate-limiting requests (429). Wait a minute, then click Retry." });
   });
 
+  it("tells a used-up daily quota apart from a per-minute limit", async () => {
+    const { geminiErrorMessage, quotaInfo } = await import("@/lib/llm/gemini");
+    const daily = new Error('{"error":{"code":429,"details":[{"violations":[{"quotaId":"GenerateRequestsPerDayPerProjectPerModel-FreeTier"}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"41s"}]}}');
+    expect(quotaInfo(daily)).toEqual({ daily: true, retryAfterS: 41 });
+    expect(geminiErrorMessage(429, "gemini-3.5-flash", daily)).toMatch(/daily quota for model "gemini-3.5-flash" .* is used up \(429\)/);
+    const minute = new Error('{"error":{"code":429,"details":[{"violations":[{"quotaId":"GenerateRequestsPerMinutePerProjectPerModel-FreeTier"}]},{"retryDelay":"12.5s"}]}}');
+    expect(quotaInfo(minute)).toEqual({ daily: false, retryAfterS: 13 });
+  });
+
   it("explains why a Gemini call failed", async () => {
     const { geminiErrorMessage } = await import("@/lib/llm/gemini");
     expect(geminiErrorMessage(503, "m", new Error("x"))).toMatch(/overloaded or unavailable \(503\)/);
