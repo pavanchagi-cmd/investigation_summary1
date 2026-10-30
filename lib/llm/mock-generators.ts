@@ -3,8 +3,7 @@
  * key). They only restate facts from the structured input, like the real prompts require.
  */
 import type { NarrativeOutput, RelationshipSummary } from "./schemas";
-import { SECTION_HEADINGS, SECTION_KEYS, type SectionKey } from "./schemas";
-import { formatFieldValue } from "../display";
+import { AI_SECTION_KEYS, SECTION_HEADINGS, type AiSectionKey } from "./schemas";
 
 const fmt = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 0 });
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -90,7 +89,7 @@ type NarrIn = {
   relationship_summaries: { counterparty: string; summary: string; review_status: string | null }[];
   scenario_findings: { scenario: string; summary: string; matched_count: number; dismissed: boolean; dismiss_reason: string | null }[];
   analyst_notes?: string;
-  section_key?: SectionKey;
+  section_key?: AiSectionKey;
 };
 
 const NAMES: Record<string, string> = {
@@ -100,55 +99,36 @@ const NAMES: Record<string, string> = {
   large_amount: "Large Amount Transaction",
 };
 
-function sectionBody(key: SectionKey, i: NarrIn): string {
-  const k = i.client_kyc;
-  const field = (key: string) => {
-    const v = k[key];
-    return v == null || v === "" ? "not provided in the documents" : formatFieldValue(key, v);
-  };
+const REVIEW: Record<string, string> = { agree: "analyst agreed", edited: "analyst edited", needs_rfi: "needs RFI" };
+
+function sectionBody(key: AiSectionKey, i: NarrIn): string {
   const rp = i.review_period;
   const active = i.scenario_findings.filter((f) => !f.dismissed);
   const dismissed = i.scenario_findings.filter((f) => f.dismissed);
   switch (key) {
     case "alert_overview":
-      return `Alert ${i.alert.alert_number} was generated on ${d(i.alert.alert_date)} with ${i.sub_alerts.length} sub-alert${i.sub_alerts.length === 1 ? "" : "s"}: ${i.sub_alerts
-        .map((s) => `${NAMES[s.scenario ?? ""] ?? "unspecified scenario"}${s.rule_id ? ` (${s.rule_id})` : ""}`)
-        .join(", ")}. The review period is ${d(rp.start)} to ${d(rp.end)} (${rp.in_period_txn_count} transactions, ${rp.currency} ${fmt(rp.total_flow)}); ${rp.excluded_txn_count} transactions outside the period were excluded.`;
-    case "client_profile":
-      return `${field("client_name")} (CIF ${field("client_id")}) is recorded as ${field("entity_type")}, with nature of business: ${field("nature_of_business")}. Risk rating: ${field("risk_rating")}. PEP: ${field("pep")}. Sanctions: ${field("sanctions")}. Adverse media: ${field("adverse_media")}.`;
-    case "activity_summary":
-      return `Total in-period flow was ${rp.currency} ${fmt(rp.total_flow)} across ${rp.in_period_txn_count} transactions between ${d(rp.start)} and ${d(rp.end)}. Expected activity per KYC: ${field("expected_activity")}.`;
-    case "counterparty_analysis": {
-      const share = i.counterparties_top6.reduce((s, c) => s + c.pct_of_client_flow, 0);
-      return `The six counterparties reviewed account for ${share.toFixed(1)}% of flow.\n\n${i.counterparties_top6
-        .map((c) => `${c.name}: ${rp.currency} ${fmt(c.total_amount)} (${c.pct_of_client_flow.toFixed(1)}%), ${c.direction}${c.flags.length ? `; flags ${c.flags.join(", ")}` : ""}.`)
-        .join("\n\n")}`;
-    }
-    case "red_flags":
       return [
-        ...active.map((f) => `${NAMES[f.scenario]}: ${f.summary}`),
-        ...dismissed.map((f) => `${NAMES[f.scenario]} was reviewed and dismissed by the analyst: "${f.dismiss_reason}".`),
-      ].join("\n\n") || "No scenario findings were raised.";
-    case "typology_assessment":
-      return active.length
-        ? `The activity resembles ${active.map((f) => ({ wire_structuring: "threshold-avoidance structuring", pattern_of_funds: "pass-through layering", round_dollar: "round-amount payments", large_amount: "unusually large transactions" })[f.scenario as "large_amount"]).join(" and ")}. This describes a resemblance only; it does not establish that money laundering occurred.`
-        : "No typology is indicated by the findings that remain after the analyst's review.";
-    case "information_gaps": {
-      const gaps = Object.entries(k).filter(([, v]) => v == null || v === "" || v === "not provided in the documents").map(([key]) => key.replace(/_/g, " "));
-      const rfi = i.relationship_summaries.filter((s) => s.review_status === "needs_rfi").map((s) => s.counterparty);
-      return [gaps.length ? `Not provided in the documents: ${gaps.join(", ")}.` : null, rfi.length ? `Further information is needed on: ${rfi.join(", ")}.` : null].filter(Boolean).join(" ") || "No information gaps were identified in the input.";
-    }
-    case "analyst_considerations":
-      return `Factors for escalation: ${active.length ? active.map((f) => `${NAMES[f.scenario]} (${f.matched_count} matched transactions)`).join("; ") : "none recorded"}.\n\nFactors against escalation: ${dismissed.length ? dismissed.map((f) => `${NAMES[f.scenario]} dismissed with reason "${f.dismiss_reason}"`).join("; ") : "none recorded in the input"}. The disposition is for the analyst to decide.`;
+        `Alert ${i.alert.alert_number} (generated ${d(i.alert.alert_date)}) covers ${d(rp.start)} to ${d(rp.end)}: ${rp.in_period_txn_count} transactions, ${rp.currency} ${fmt(rp.total_flow)}.`,
+        `Scenarios: ${i.sub_alerts.map((s) => `${NAMES[s.scenario ?? ""] ?? "unspecified scenario"}${s.rule_id ? ` (${s.rule_id})` : ""}`).join(", ")}.`,
+        active.length ? `Red flags confirmed by the rules: ${active.map((f) => `${NAMES[f.scenario]} (${f.matched_count} transactions)`).join(", ")}.` : "No red flags remain after the analyst's review.",
+        ...dismissed.map((f) => `${NAMES[f.scenario]} was dismissed by the analyst: "${f.dismiss_reason}".`),
+      ].join(" ");
+    case "counterparty_summary":
+      return `Money between the client and the six main counterparties:\n${i.counterparties_top6
+        .map((c) => {
+          const r = i.relationship_summaries.find((x) => x.counterparty === c.name);
+          return `- ${c.name}: ${c.direction}, ${rp.currency} ${fmt(c.total_amount)} (${c.pct_of_client_flow.toFixed(1)}% of flow). Purpose: ${r?.summary ?? "not provided"}${r?.review_status ? ` (${REVIEW[r.review_status] ?? r.review_status})` : ""}.${c.flags.length ? ` Red flags: ${c.flags.join(", ")}.` : ""}`;
+        })
+        .join("\n")}`;
   }
 }
 
 export function mockNarrative(input: unknown): NarrativeOutput {
   const i = input as NarrIn;
-  return { sections: SECTION_KEYS.map((key) => ({ key, heading: SECTION_HEADINGS[key], body: sectionBody(key, i) })) };
+  return { sections: AI_SECTION_KEYS.map((key) => ({ key, heading: SECTION_HEADINGS[key], body: sectionBody(key, i) })) };
 }
 
-export function mockNarrativeSection(input: unknown): { key: SectionKey; heading: string; body: string } {
+export function mockNarrativeSection(input: unknown): { key: AiSectionKey; heading: string; body: string } {
   const i = input as NarrIn;
   const key = i.section_key ?? "alert_overview";
   return { key, heading: SECTION_HEADINGS[key], body: sectionBody(key, i) };

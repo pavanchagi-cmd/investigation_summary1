@@ -6,12 +6,12 @@ import { cases, narratives, type Case } from "@/lib/db/schema";
 import { logAudit } from "@/lib/audit/log";
 import { callGemini } from "@/lib/llm/gemini";
 import { loadPrompt } from "@/lib/llm/prompts";
-import { NarrativeOutput, NarrativeSection, SECTION_HEADINGS, type SectionKey } from "@/lib/llm/schemas";
+import { NarrativeOutput, NarrativeSection, SECTION_HEADINGS, type AiSectionKey } from "@/lib/llm/schemas";
 import { HttpError } from "@/lib/http";
 import { getProgress } from "@/lib/cases/progress";
 import type { SessionUser } from "@/lib/auth/guard";
 import { buildNarrativeInput } from "./input";
-import { docToText, replaceSection, sectionsToDoc, type PMDoc } from "./doc";
+import { docToText, replaceSection, sectionsToDoc, withDisposition, type PMDoc } from "./doc";
 import { diffDocs } from "./diff";
 
 const USER_PREFIX =
@@ -46,7 +46,7 @@ export async function generateNarrative(c: Case, user: SessionUser) {
     actorId: user.id,
     mockInput: input,
   });
-  const doc = sectionsToDoc(res.data.sections);
+  const doc = sectionsToDoc(res.data.sections, c.disposition);
   const db = await getDb();
   const [row] = await db
     .insert(narratives)
@@ -101,7 +101,7 @@ export async function saveAnalystVersion(c: Case, user: SessionUser, doc: PMDoc,
 }
 
 /** Re-runs Gemini for one section only; the caller confirmed that edits in that section are replaced. */
-export async function regenerateSection(c: Case, user: SessionUser, key: SectionKey) {
+export async function regenerateSection(c: Case, user: SessionUser, key: AiSectionKey) {
   const versions = await listVersions(c.id);
   if (!versions.length) throw new HttpError(409, "Generate the narrative first");
   const prompt = loadPrompt("drafter-system");
@@ -158,11 +158,14 @@ export async function approve(c: Case, user: SessionUser) {
   const db = await getDb();
   const versions = await listVersions(c.id);
   let final = versions[versions.length - 1];
-  if (final.kind === "ai_draft") {
+  // Section 3 always states the analyst's own disposition in the approved version.
+  const finalDoc = withDisposition(final.contentJson as PMDoc, c.disposition);
+  const finalText = docToText(finalDoc);
+  if (final.kind === "ai_draft" || finalText !== final.contentText) {
     // The final version is always an analyst row, even when the AI draft was accepted unchanged.
     [final] = await db
       .insert(narratives)
-      .values({ caseId: c.id, version: final.version + 1, kind: "analyst", contentJson: final.contentJson, contentText: final.contentText, createdBy: user.id })
+      .values({ caseId: c.id, version: final.version + 1, kind: "analyst", contentJson: finalDoc, contentText: finalText, createdBy: user.id })
       .returning();
   }
   const approvedAt = new Date();

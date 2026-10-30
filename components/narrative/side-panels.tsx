@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Label, Textarea } from "@/components/ui/form";
 import { useSave } from "@/components/case/save-status";
 import { api } from "@/lib/client/api";
-import { narrativeFlush } from "@/lib/client/flush";
+import { DISPOSITION_EVENT, narrativeFlush } from "@/lib/client/flush";
 import { cn } from "@/lib/utils";
 
 export const DISPOSITIONS = [
@@ -46,6 +46,7 @@ export function DispositionPanel({
 
   async function saveDisposition(nextD: string, nextR: string) {
     if (saved.current.d === nextD && saved.current.r === nextR) return;
+    if (saved.current.d !== nextD) window.dispatchEvent(new CustomEvent(DISPOSITION_EVENT, { detail: nextD || null }));
     saved.current = { d: nextD, r: nextR };
     await track(api(`/api/cases/${caseId}`, { method: "PATCH", body: { action: "set_disposition", disposition: nextD || null, rationale: nextR } }));
     router.refresh();

@@ -71,7 +71,10 @@ test("analyst completes ALR-2026-000123 from alert entry to Word export", async 
   await page.getByRole("button", { name: "Generate narrative" }).click();
   await page.waitForURL(/\/narrative$/);
   const editor = page.locator(".ProseMirror");
-  await expect(editor).toContainText("1. Alert overview");
+  await expect(editor).toContainText("1. Alert number and scenarios");
+  await expect(editor).toContainText("2. Transactions with the six counterparties");
+  await expect(editor).toContainText("3. Disposition");
+  await expect(editor).toContainText("To be decided by the analyst");
   await expect(editor).toContainText('dismissed by the analyst: "Large receipts are trade settlements');
   await expect(editor).not.toContainText("50210004417");
   await page.getByRole("button", { name: "Approve narrative" }).isDisabled();
@@ -83,6 +86,8 @@ test("analyst completes ALR-2026-000123 from alert entry to Word export", async 
   await page.getByRole("tab", { name: "Analyst version" }).click();
   await expect(page.getByRole("button", { name: "Approve narrative" })).toBeDisabled();
   await page.getByLabel("Escalate to SAR/STR review").check();
+  // Section 3 follows the analyst's choice.
+  await expect(editor.locator("h2", { hasText: "3. Disposition" }).locator("xpath=following-sibling::p[1]")).toHaveText("Escalation");
   await page.fill("#rationale", "Unexplained pass-through via Harbourline and structured wires to Pinewood.");
   await page.locator("#rationale").blur();
   await axe(page, "screen 4");
@@ -97,6 +102,7 @@ test("analyst completes ALR-2026-000123 from alert entry to Word export", async 
   const txt = await (await page.request.get(`${caseUrl.replace(/^.*\/cases/, "/api/cases")}/export?format=txt`)).text();
   expect(txt).toContain("Reviewed against the alert report.");
   expect(txt).toContain("Escalate to SAR/STR review");
+  expect(txt).toContain("3. DISPOSITION\n\nEscalation");
   expect(txt).toContain("reviewed and approved by Aditi Rao");
   await logout(page);
 });

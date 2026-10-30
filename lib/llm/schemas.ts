@@ -172,34 +172,36 @@ export const RelationshipSummary = z.object({
 export const RelationshipSummaries = z.object({ summaries: z.array(RelationshipSummary) });
 export type RelationshipSummary = z.infer<typeof RelationshipSummary>;
 
-export const SECTION_KEYS = [
-  "alert_overview",
-  "client_profile",
-  "activity_summary",
-  "counterparty_analysis",
-  "red_flags",
-  "typology_assessment",
-  "information_gaps",
-  "analyst_considerations",
-] as const;
+/**
+ * Narrative sections (owner request, DECISIONS I30): alert and scenarios, the transactions with the six
+ * counterparties, and the disposition. Gemini drafts the first two; the disposition section only ever
+ * shows the analyst's own choice.
+ */
+export const SECTION_KEYS = ["alert_overview", "counterparty_summary", "disposition"] as const;
 export type SectionKey = (typeof SECTION_KEYS)[number];
 
-/** Display headings; wording follows the design where it has one (DECISIONS S2). */
+/** Sections Gemini drafts (and can regenerate). */
+export const AI_SECTION_KEYS = ["alert_overview", "counterparty_summary"] as const;
+export type AiSectionKey = (typeof AI_SECTION_KEYS)[number];
+
 export const SECTION_HEADINGS: Record<SectionKey, string> = {
-  alert_overview: "Alert overview",
-  client_profile: "Client profile",
-  activity_summary: "Activity in the review period",
-  counterparty_analysis: "Counterparty analysis",
-  red_flags: "Red flags identified",
-  typology_assessment: "Typology assessment",
-  information_gaps: "Information gaps",
-  analyst_considerations: "Points for analyst decision",
+  alert_overview: "Alert number and scenarios",
+  counterparty_summary: "Transactions with the six counterparties",
+  disposition: "Disposition",
 };
 
-export const NarrativeSection = z.object({ key: z.enum(SECTION_KEYS), heading: z.string(), body: z.string() });
+/** One-word disposition shown in section 3. */
+export const DISPOSITION_SHORT: Record<string, string> = {
+  close_nfa: "Closed",
+  request_info: "RFI",
+  escalate_sar: "Escalation",
+};
+export const DISPOSITION_PENDING = "To be decided by the analyst (choose Closed, RFI or Escalation in the Disposition panel).";
+
+export const NarrativeSection = z.object({ key: z.enum(AI_SECTION_KEYS), heading: z.string(), body: z.string() });
 export const NarrativeOutput = z
   .object({ sections: z.array(NarrativeSection) })
-  .refine((o) => SECTION_KEYS.every((k) => o.sections.filter((s) => s.key === k).length === 1), {
-    message: `Return exactly one section for each key: ${SECTION_KEYS.join(", ")}`,
+  .refine((o) => AI_SECTION_KEYS.every((k) => o.sections.filter((s) => s.key === k).length === 1), {
+    message: `Return exactly one section for each key: ${AI_SECTION_KEYS.join(", ")}`,
   });
 export type NarrativeOutput = z.infer<typeof NarrativeOutput>;

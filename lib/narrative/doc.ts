@@ -1,4 +1,4 @@
-import { SECTION_HEADINGS, SECTION_KEYS, type SectionKey } from "@/lib/llm/schemas";
+import { DISPOSITION_PENDING, DISPOSITION_SHORT, SECTION_HEADINGS, SECTION_KEYS, type SectionKey } from "@/lib/llm/schemas";
 
 /** Minimal TipTap / ProseMirror JSON types used on the server and in the browser. */
 export type PMNode = { type: string; attrs?: Record<string, unknown>; content?: PMNode[]; text?: string; marks?: { type: string }[] };
@@ -42,16 +42,25 @@ function paragraphsFromBody(body: string): PMNode[] {
   return out.length ? out : [{ type: "paragraph" }];
 }
 
-/** Gemini sections → TipTap JSON (headings are the fixed section headings). */
-export function sectionsToDoc(sections: { key: SectionKey; body: string }[]): PMDoc {
+/** Section 3 text: the analyst's disposition in one word, or a note that it is still open. */
+export function dispositionText(disposition: string | null | undefined) {
+  return (disposition && DISPOSITION_SHORT[disposition]) || DISPOSITION_PENDING;
+}
+
+/** Gemini sections + the analyst's disposition → TipTap JSON (headings are the fixed section headings). */
+export function sectionsToDoc(sections: { key: SectionKey; body: string }[], disposition: string | null = null): PMDoc {
   const content: PMNode[] = [];
   for (const key of SECTION_KEYS) {
     const s = sections.find((x) => x.key === key);
+    const body = key === "disposition" ? dispositionText(disposition) : (s?.body ?? "Not provided in the documents.");
     content.push({ type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: headingText(key) }] });
-    content.push(...paragraphsFromBody(s?.body ?? "Not provided in the documents."));
+    content.push(...paragraphsFromBody(body));
   }
   return { type: "doc", content };
 }
+
+/** Narratives drafted before the three-section layout use other numbered headings ("4. Counterparty analysis"). */
+const NUMBERED_HEADING = /^\d+\.\s+\S/;
 
 export function nodeText(n: PMNode): string {
   if (n.type === "text") return n.text ?? "";
@@ -73,7 +82,7 @@ export function docSections(doc: PMDoc): DocSection[] {
     if (n.type === "heading") {
       const text = nodeText(n).trim();
       const key = SECTION_KEYS.find((k) => headingText(k).toLowerCase() === text.toLowerCase()) ?? null;
-      if (key || !cur) {
+      if (key || !cur || NUMBERED_HEADING.test(text)) {
         cur = { key, heading: text, text: "", nodes: [] };
         out.push(cur);
         continue;
@@ -106,7 +115,7 @@ export function replaceSection(doc: PMDoc, key: SectionKey, body: string): PMDoc
     if (n.type === "heading") {
       const text = nodeText(n).trim().toLowerCase();
       const isTarget = text === headingText(key).toLowerCase();
-      const isOther = SECTION_KEYS.some((k) => headingText(k).toLowerCase() === text);
+      const isOther = SECTION_KEYS.some((k) => headingText(k).toLowerCase() === text) || NUMBERED_HEADING.test(text);
       if (isTarget) {
         content.push(n, ...paragraphsFromBody(body));
         skipping = true;
@@ -121,4 +130,13 @@ export function replaceSection(doc: PMDoc, key: SectionKey, body: string): PMDoc
     content.push({ type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: headingText(key) }] }, ...paragraphsFromBody(body));
   }
   return { type: "doc", content };
+}
+
+export function hasSection(doc: PMDoc, key: SectionKey) {
+  return docSections(doc).some((s) => s.key === key);
+}
+
+/** Puts the analyst's disposition into section 3; older narratives without that section are left as they are. */
+export function withDisposition(doc: PMDoc, disposition: string | null | undefined): PMDoc {
+  return hasSection(doc, "disposition") ? replaceSection(doc, "disposition", dispositionText(disposition)) : doc;
 }

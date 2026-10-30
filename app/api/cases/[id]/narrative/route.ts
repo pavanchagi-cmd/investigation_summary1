@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { ALL_ROLES, getCaseForUser, getEditableCase, requireRole } from "@/lib/auth/guard";
 import { idParam, parseBody, route } from "@/lib/http";
-import { SECTION_KEYS } from "@/lib/llm/schemas";
+import { AI_SECTION_KEYS } from "@/lib/llm/schemas";
 import { DocSchema, generateNarrative, listVersions, regenerateSection, saveAnalystVersion } from "@/lib/narrative/service";
 import type { PMDoc } from "@/lib/narrative/doc";
 
@@ -17,7 +17,7 @@ export const GET = route(async (_req, { params }: Ctx) => {
   return NextResponse.json({ versions: versions.map((v) => ({ id: v.id, version: v.version, kind: v.kind, createdAt: v.createdAt, model: v.model, promptVersion: v.promptVersion })) });
 });
 
-const Generate = z.object({ sectionKey: z.enum(SECTION_KEYS).optional(), confirmReplace: z.boolean().optional() }).default({});
+const Generate = z.object({ sectionKey: z.enum(AI_SECTION_KEYS).optional(), confirmReplace: z.boolean().optional() }).default({});
 
 /** Generate the narrative, or (with sectionKey) regenerate one section after the analyst confirmed. */
 export const POST = route(async (req, { params }: Ctx) => {

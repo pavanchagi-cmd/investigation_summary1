@@ -13,9 +13,9 @@ import { Select } from "@/components/ui/form";
 import { AiDraftBadge } from "@/components/case/badges";
 import { useSave } from "@/components/case/save-status";
 import { api } from "@/lib/client/api";
-import { narrativeFlush } from "@/lib/client/flush";
-import { SECTION_HEADINGS, SECTION_KEYS, type SectionKey } from "@/lib/llm/schemas";
-import { docSections, headingText, type PMDoc } from "@/lib/narrative/doc";
+import { DISPOSITION_EVENT, narrativeFlush } from "@/lib/client/flush";
+import { AI_SECTION_KEYS, SECTION_HEADINGS, SECTION_KEYS, type AiSectionKey, type SectionKey } from "@/lib/llm/schemas";
+import { docSections, headingText, withDisposition, type PMDoc } from "@/lib/narrative/doc";
 import type { SectionDiff } from "@/lib/narrative/diff";
 import { cn } from "@/lib/utils";
 import { DocView } from "./doc-view";
@@ -46,7 +46,7 @@ export function NarrativeWorkspace({
   const lastSaved = React.useRef(0);
   const idleTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const editorRef = React.useRef<Editor | null>(null);
-  const [regen, setRegen] = React.useState<SectionKey | null>(null);
+  const [regen, setRegen] = React.useState<AiSectionKey | null>(null);
   const [regenBusy, setRegenBusy] = React.useState(false);
   const [regenError, setRegenError] = React.useState<string | null>(null);
   const [cursorSection, setCursorSection] = React.useState<SectionKey>("alert_overview");
@@ -111,6 +111,19 @@ export function NarrativeWorkspace({
     editor?.setEditable(!locked);
   }, [editor, locked]);
 
+  // Section 3 follows the analyst's choice in the Disposition panel (an analyst edit, saved like any other).
+  React.useEffect(() => {
+    const onDisposition = (e: Event) => {
+      const ed = editorRef.current;
+      if (!ed || locked) return;
+      const current = ed.getJSON() as PMDoc;
+      const next = withDisposition(current, (e as CustomEvent<string | null>).detail);
+      if (JSON.stringify(next) !== JSON.stringify(current)) ed.commands.setContent(next, { emitUpdate: true });
+    };
+    window.addEventListener(DISPOSITION_EVENT, onDisposition);
+    return () => window.removeEventListener(DISPOSITION_EVENT, onDisposition);
+  }, [locked]);
+
   // Flush unsaved edits when the tab is hidden or the page unloads.
   React.useEffect(() => {
     const flush = () => {
@@ -128,7 +141,7 @@ export function NarrativeWorkspace({
     };
   }, [dirty, save]);
 
-  async function doRegenerate(key: SectionKey) {
+  async function doRegenerate(key: AiSectionKey) {
     setRegenBusy(true);
     setRegenError(null);
     try {
@@ -202,7 +215,7 @@ export function NarrativeWorkspace({
               <TableIcon />
             </ToolButton>
             <span className="mx-1 h-5 w-px bg-line" aria-hidden />
-            <Button variant="ghost" size="sm" disabled={locked} onClick={() => setRegen(cursorSection)}>
+            <Button variant="ghost" size="sm" disabled={locked} onClick={() => setRegen(cursorSection === "disposition" ? "alert_overview" : cursorSection)}>
               <RefreshCw /> Regenerate section
             </Button>
             <span className="ml-auto">
@@ -232,8 +245,8 @@ export function NarrativeWorkspace({
             <label htmlFor="regen-section" className="text-[13px] font-medium">
               Section
             </label>
-            <Select id="regen-section" value={regen} onChange={(e) => setRegen(e.target.value as SectionKey)} className="mt-1">
-              {SECTION_KEYS.map((k, i) => (
+            <Select id="regen-section" value={regen} onChange={(e) => setRegen(e.target.value as AiSectionKey)} className="mt-1">
+              {AI_SECTION_KEYS.map((k, i) => (
                 <option key={k} value={k}>
                   {i + 1}. {SECTION_HEADINGS[k]}
                 </option>

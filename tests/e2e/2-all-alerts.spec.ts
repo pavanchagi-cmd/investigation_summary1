@@ -32,8 +32,9 @@ for (const [alert, scenario, matches] of [
     }
     // Opening screen 4 with nothing blocking drafts the narrative on its own.
     await page.goto(`${url}/narrative`);
-    await expect(page.locator(".ProseMirror")).toContainText("8. Points for analyst decision", { timeout: 60_000 });
+    await expect(page.locator(".ProseMirror")).toContainText("2. Transactions with the six counterparties", { timeout: 60_000 });
     await page.getByLabel("Close – no further action").check();
+    await expect(page.locator(".ProseMirror")).toContainText("3. DispositionClosed");
     await page.fill("#rationale", "Activity explained by documented trade; no further action required.");
     await page.locator("#rationale").blur();
     await page.getByRole("button", { name: "Approve narrative" }).click();

@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { docSections, docToText, replaceSection, sectionsToDoc, headingText } from "@/lib/narrative/doc";
+import { docSections, docToText, replaceSection, sectionsToDoc, headingText, withDisposition, type PMDoc } from "@/lib/narrative/doc";
 import { diffDocs } from "@/lib/narrative/diff";
 import {
   AlertReportExtraction,
@@ -11,6 +11,7 @@ import {
   NarrativeOutput,
   RelationshipSummary,
   RfiExtraction,
+  AI_SECTION_KEYS,
   SECTION_KEYS,
 } from "@/lib/llm/schemas";
 import { mockNarrative, mockQ5 } from "@/lib/llm/mock-generators";
@@ -18,44 +19,67 @@ import { describeAudit } from "@/lib/audit/describe";
 
 vi.mock("@/lib/audit/log", () => ({ logAudit: vi.fn(async () => {}) }));
 
-const sections = SECTION_KEYS.map((key) => ({ key, body: `Body of ${key}. Second sentence for ${key}.` }));
+const sections = AI_SECTION_KEYS.map((key) => ({ key, body: `Body of ${key}. Second sentence for ${key}.` }));
 
 describe("narrative document", () => {
   it("builds TipTap JSON with the fixed headings and reads it back per section", () => {
     const doc = sectionsToDoc(sections);
     const parsed = docSections(doc);
     expect(parsed.map((s) => s.key)).toEqual([...SECTION_KEYS]);
-    expect(parsed[0].heading).toBe("1. Alert overview");
-    expect(parsed[7].heading).toBe("8. Points for analyst decision");
-    expect(docToText(doc)).toContain("3. ACTIVITY IN THE REVIEW PERIOD\n\nBody of activity_summary.");
+    expect(parsed[0].heading).toBe("1. Alert number and scenarios");
+    expect(parsed[1].heading).toBe("2. Transactions with the six counterparties");
+    expect(parsed[2].heading).toBe("3. Disposition");
+    expect(docToText(doc)).toContain("2. TRANSACTIONS WITH THE SIX COUNTERPARTIES\n\nBody of counterparty_summary.");
+  });
+
+  it("section 3 shows only the analyst's disposition, in one word", () => {
+    const pending = docSections(sectionsToDoc(sections)).find((s) => s.key === "disposition")!.text;
+    expect(pending).toMatch(/^To be decided by the analyst/);
+    for (const [value, word] of [["close_nfa", "Closed"], ["request_info", "RFI"], ["escalate_sar", "Escalation"]]) {
+      const doc = withDisposition(sectionsToDoc(sections), value);
+      expect(docSections(doc).find((s) => s.key === "disposition")!.text).toBe(word);
+      expect(docSections(doc).find((s) => s.key === "alert_overview")!.text).toContain("Body of alert_overview.");
+    }
+  });
+
+  it("older 8-section narratives still split into their sections and are not given a section 3", () => {
+    const legacy: PMDoc = {
+      type: "doc",
+      content: ["1. Alert overview", "4. Counterparty analysis", "8. Points for analyst decision"].flatMap((h) => [
+        { type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: h }] },
+        { type: "paragraph", content: [{ type: "text", text: `Text of ${h}` }] },
+      ]),
+    };
+    expect(docSections(legacy).map((s) => s.heading)).toEqual(["1. Alert overview", "4. Counterparty analysis", "8. Points for analyst decision"]);
+    expect(withDisposition(legacy, "close_nfa")).toEqual(legacy);
   });
 
   it("turns '- ' lines into a bullet list", () => {
-    const doc = sectionsToDoc([{ key: "information_gaps", body: "- industry code\n- invoices for Aurelia" }]);
+    const doc = sectionsToDoc([{ key: "counterparty_summary", body: "- industry code\n- invoices for Aurelia" }]);
     expect(doc.content.some((n) => n.type === "bulletList")).toBe(true);
   });
 
   it("regenerating a section replaces only that section", () => {
     const doc = sectionsToDoc(sections);
-    const next = replaceSection(doc, "red_flags", "New red flags text.");
+    const next = replaceSection(doc, "alert_overview", "New overview text.");
     const before = docSections(doc);
     const after = docSections(next);
-    expect(after.find((s) => s.key === "red_flags")!.text).toBe("New red flags text.");
-    for (const k of SECTION_KEYS.filter((k) => k !== "red_flags")) {
+    expect(after.find((s) => s.key === "alert_overview")!.text).toBe("New overview text.");
+    for (const k of SECTION_KEYS.filter((k) => k !== "alert_overview")) {
       expect(after.find((s) => s.key === k)!.text).toBe(before.find((s) => s.key === k)!.text);
     }
-    expect(headingText("red_flags")).toBe("5. Red flags identified");
+    expect(headingText("counterparty_summary")).toBe("2. Transactions with the six counterparties");
   });
 });
 
 describe("diff and % AI text kept", () => {
   it("counts word insertions and deletions per section", () => {
-    const ai = sectionsToDoc([{ key: "activity_summary", body: "Activity is consistent with seasonal trade." }]);
-    const edited = sectionsToDoc([{ key: "activity_summary", body: "Activity is not consistent with seasonal trade per the RFI." }]);
+    const ai = sectionsToDoc([{ key: "counterparty_summary", body: "Activity is consistent with seasonal trade." }]);
+    const edited = sectionsToDoc([{ key: "counterparty_summary", body: "Activity is not consistent with seasonal trade per the RFI." }]);
     const d = diffDocs(ai, edited);
     expect(d.added).toBe(5); // not, trade, per, the, RFI.
     expect(d.removed).toBe(1); // "trade." became "trade"
-    const act = d.sections.find((s) => s.heading.startsWith("3."))!;
+    const act = d.sections.find((s) => s.heading.startsWith("2."))!;
     expect(act.added).toBe(5);
     expect(d.pctKept).toBeGreaterThan(80);
     expect(d.pctKept).toBeLessThan(100);
@@ -68,11 +92,12 @@ describe("diff and % AI text kept", () => {
 });
 
 describe("LLM schemas", () => {
-  it("narrative output must contain each of the 8 sections exactly once", () => {
-    const ok = { sections: SECTION_KEYS.map((key) => ({ key, heading: key, body: "x" })) };
+  it("narrative output must contain each AI-drafted section exactly once, and never the disposition", () => {
+    const ok = { sections: AI_SECTION_KEYS.map((key) => ({ key, heading: key, body: "x" })) };
     expect(NarrativeOutput.safeParse(ok).success).toBe(true);
     expect(NarrativeOutput.safeParse({ sections: ok.sections.slice(1) }).success).toBe(false);
     expect(NarrativeOutput.safeParse({ sections: [...ok.sections, ok.sections[0]] }).success).toBe(false);
+    expect(NarrativeOutput.safeParse({ sections: [...ok.sections, { key: "disposition", heading: "d", body: "Closed" }] }).success).toBe(false);
   });
 
   it("relationship summary caps the summary length and enumerates the tags", () => {
@@ -208,16 +233,17 @@ describe("audit descriptions", () => {
 
 describe("narrative body formatting", () => {
   it("turns a lead-in line followed by bullets into a paragraph and a list", () => {
-    const doc = sectionsToDoc([{ key: "analyst_considerations", body: "For escalation:\n- Volume 70× expected\n- High-risk country\n\nAgainst escalation:\n- Long-standing client" }]);
-    const nodes = docSections(doc).find((s) => s.key === "analyst_considerations")!.nodes;
+    const doc = sectionsToDoc([{ key: "counterparty_summary", body: "For escalation:\n- Volume 70× expected\n- High-risk country\n\nAgainst escalation:\n- Long-standing client" }]);
+    const nodes = docSections(doc).find((s) => s.key === "counterparty_summary")!.nodes;
     expect(nodes.map((n) => n.type)).toEqual(["paragraph", "bulletList", "paragraph", "bulletList"]);
     expect(docToText(doc)).toMatch(/For escalation:\n+- Volume 70× expected\n- High-risk country/);
   });
 
-  it("uses prompt version 2 (plain language, top-6 counterparty focus)", async () => {
+  it("uses prompt version 3 (two AI sections; the disposition is the analyst's)", async () => {
     const { loadPrompt } = await import("@/lib/llm/prompts");
     const p = loadPrompt("drafter-system");
-    expect(p.version).toBe("drafter-system@2");
-    expect(p.text).toContain("one bullet for each entry in counterparties_top6");
+    expect(p.version).toBe("drafter-system@3");
+    expect(p.text).toContain("never write a disposition");
+    expect(p.text).toContain("for each entry in counterparties_top6");
   });
 });

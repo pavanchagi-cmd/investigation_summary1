@@ -18,7 +18,7 @@ Production URL: https://investigationsummary1.vercel.app
    parse issues (Fix / Exclude with reason).
 2. **Client & counterparties** – Q3 KYC fields with sources and risk tiles, Q4 top-6 counterparties with swap drawer.
 3. **Purpose & red flags** – Q5 relationship summaries (Agree / Edited / Needs RFI), red-flag cards with dismiss, Generate narrative.
-4. **Narrative & decision** – TipTap editor, original AI draft, word diff, regenerate section, disposition, approve, export, audit trail.
+4. **Narrative & decision** – three-section narrative (alert and scenarios; transactions with the six counterparties; the analyst's disposition), TipTap editor, original AI draft, word diff, regenerate section, disposition, approve, export, audit trail.
 5. **Dashboard** – cases drafted, average time-to-draft, manual baseline, % of AI text kept, weekly trend, dispositions.
 
 Plus **QA review** (read-only: final narrative, AI draft, diff, edit history, audit log) and **Admin settings**
