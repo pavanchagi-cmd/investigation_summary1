@@ -16,6 +16,8 @@ export const maxDuration = 300;
 
 const Patch = z
   .object({
+    /** Read the document again (e.g. after Gemini failed). */
+    reparse: z.literal(true).optional(),
     confirmedType: z.enum(docTypeEnum.enumValues).optional(),
     columnMapping: z.record(z.enum(TXN_FIELDS), z.string().max(200)).optional(),
     currency: z
@@ -34,6 +36,9 @@ export const PATCH = route(async (req, { params }: Ctx) => {
   await getEditableCase(doc.caseId, user);
   const body = await parseBody(req, Patch);
 
+  if (body.reparse) {
+    await logAudit({ caseId: doc.caseId, actorId: user.id, action: "document_reparsed", entity: "document", entityId: id, before: { status: doc.parseStatus } });
+  }
   if (body.confirmedType) {
     await db.update(documents).set({ confirmedType: body.confirmedType }).where(eq(documents.id, id));
     await logAudit({
@@ -65,7 +70,7 @@ export const PATCH = route(async (req, { params }: Ctx) => {
     });
   }
   // A type change needs fresh extraction; mapping/currency changes re-validate the rows already read.
-  const reuse = !body.confirmedType || body.confirmedType === (doc.confirmedType ?? doc.detectedType);
+  const reuse = !body.reparse && (!body.confirmedType || body.confirmedType === (doc.confirmedType ?? doc.detectedType));
   await db.update(documents).set({ parseStatus: "pending" }).where(eq(documents.id, id));
   after(() => processDocument(id, user.id, { reuseExtraction: reuse }));
   return NextResponse.json({ ok: true });

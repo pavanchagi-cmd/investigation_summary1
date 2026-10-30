@@ -107,6 +107,23 @@ describe("LLM schemas", () => {
     expect(json).not.toContain("maxLength");
     expect(json).toContain("relationshipType");
   });
+
+  it("keeps extraction schemas small: no default integer bounds, nullable types instead of anyOf", async () => {
+    const { toResponseSchema } = await import("@/lib/llm/gemini");
+    const { KycExtraction } = await import("@/lib/llm/schemas");
+    const json = JSON.stringify(toResponseSchema(KycExtraction));
+    expect(json).not.toContain("9007199254740991");
+    expect(json).toContain('"page":{"type":["integer","null"]}');
+    expect(json.length).toBeLessThan(8000); // was 10.2 KB before the bounds and anyOf were removed
+  });
+
+  it("explains why a Gemini call failed", async () => {
+    const { geminiErrorMessage } = await import("@/lib/llm/gemini");
+    expect(geminiErrorMessage(503, "m", new Error("x"))).toMatch(/overloaded or unavailable \(503\)/);
+    expect(geminiErrorMessage(400, "m", new Error("schema too complex"))).toBe("Gemini rejected the request (400): schema too complex");
+    expect(geminiErrorMessage(undefined, "m", new Error("Request timed out"))).toMatch(/took longer than 60 s/);
+    expect(geminiErrorMessage(403, "m", new Error(""))).toMatch(/refused the API key \(403\)/);
+  });
 });
 
 describe("Gemini wrapper (mock mode)", () => {

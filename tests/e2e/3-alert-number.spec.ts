@@ -1,4 +1,7 @@
 import { expect, test } from "@playwright/test";
+import fs from "node:fs";
+import path from "node:path";
+import * as XLSX from "@e965/xlsx";
 import { login } from "./helpers";
 
 test("analyst corrects the alert number; sub-alerts follow and duplicates are refused", async ({ page }) => {
@@ -33,6 +36,20 @@ test("analyst corrects the alert number; sub-alerts follow and duplicates are re
   await expect(page.getByText("transactions_Q3.xlsx")).toHaveCount(0);
   await expect(page.getByText("0 txns")).toHaveCount(2);
 
+  // A document Gemini cannot read shows the reason and a Retry button (mock mode has no fixture for it).
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["Field", "Value"], ["Client name", "Test Person"]]), "Sheet1");
+  const kyc = path.join(test.info().outputDir, "kyc_profile_TEST.xlsx");
+  fs.mkdirSync(path.dirname(kyc), { recursive: true });
+  XLSX.writeFile(wb, kyc);
+  await page.setInputFiles('input[aria-label="Upload documents"]', kyc);
+  await expect(page.getByText("Could not be read")).toBeVisible({ timeout: 60_000 });
+  await page.getByRole("button", { name: "Retry reading kyc_profile_TEST.xlsx" }).click();
+  await expect(page.getByText("Could not be read")).toBeVisible({ timeout: 60_000 });
+  await page.getByRole("button", { name: "Remove kyc_profile_TEST.xlsx" }).click();
+  await page.getByRole("button", { name: "Remove document" }).click();
+  await expect(page.getByText("kyc_profile_TEST.xlsx")).toHaveCount(0);
+
   // The narrative screen says exactly what is still missing.
   await page.goto(page.url().replace(/\/intake$/, "/narrative"));
   await expect(page.getByText("Q1: choose a scenario for sub-alert ALR-2026-000902-01 (or remove it)")).toBeVisible();
@@ -42,6 +59,7 @@ test("analyst corrects the alert number; sub-alerts follow and duplicates are re
 
   await page.goto(page.url().replace(/\/narrative$/, "/audit"));
   await expect(page.getByText(/removed transactions_Q3\.xlsx \(\d+ transactions\)/)).toBeVisible();
+  await expect(page.getByText(/re-parsed a document/)).toBeVisible();
   await expect(page.getByText("changed the alert number: ALR-2026-000901 → ALR-2026-000902")).toBeVisible();
 });
 

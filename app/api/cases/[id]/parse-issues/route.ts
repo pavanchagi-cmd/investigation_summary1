@@ -5,7 +5,7 @@ import { idParam, parseBody, route } from "@/lib/http";
 import { excludeAll, excludeIssue, fixIssue, listIssues } from "@/lib/documents/issues";
 
 type Ctx = { params: Promise<{ id: string }> };
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 export const GET = route(async (_req, { params }: Ctx) => {
   const user = await requireRole(ALL_ROLES);

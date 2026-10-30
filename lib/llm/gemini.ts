@@ -41,7 +41,7 @@ export type CallInput<T> = {
 export type CallResult<T> = { data: T; model: string; promptVersion: string; inputHash: string };
 
 const TIMEOUT_MS = 60_000;
-const MAX_TRANSPORT_RETRIES = 2;
+const MAX_TRANSPORT_RETRIES = 3;
 
 export function isMock() {
   return process.env.GEMINI_MOCK === "1";
@@ -95,7 +95,33 @@ export function toResponseSchema(schema: ZodType): unknown {
     }
     return out;
   };
-  return clean(raw);
+  return simplify(clean(raw));
+}
+
+const SAFE_INT = Number.MAX_SAFE_INTEGER;
+
+/**
+ * Shrinks the schema Gemini has to compile (large schemas are rejected with a 400): drops Zod's
+ * default ±MAX_SAFE_INTEGER bounds and turns anyOf [X, null] into a nullable type list.
+ */
+function simplify(node: unknown): unknown {
+  if (Array.isArray(node)) return node.map(simplify);
+  if (!node || typeof node !== "object") return node;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(node as Record<string, unknown>)) {
+    if ((k === "minimum" && v === -SAFE_INT) || (k === "maximum" && v === SAFE_INT)) continue;
+    out[k] = simplify(v);
+  }
+  const any = out.anyOf as Record<string, unknown>[] | undefined;
+  if (Array.isArray(any) && any.length === 2) {
+    const nullIdx = any.findIndex((x) => x && x.type === "null" && Object.keys(x).length === 1);
+    const other = any[1 - nullIdx];
+    if (nullIdx >= 0 && other && typeof other.type === "string" && !other.properties && !other.items && !other.anyOf) {
+      delete out.anyOf;
+      Object.assign(out, other, { type: [other.type, "null"] });
+    }
+  }
+  return out;
 }
 
 export function hashInput(systemInstruction: string, parts: Part[]): string {
@@ -114,6 +140,20 @@ function statusOf(err: unknown): number | undefined {
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Readable reason for a failed call. Google's error text describes the request, never the document. */
+export function geminiErrorMessage(status: number | undefined, model: string, err: unknown): string {
+  const detail = String((err as Error)?.message ?? "")
+    .replace(/\s+/g, " ")
+    .slice(0, 200);
+  if (status === 429) return "Gemini is rate-limiting requests (429). Wait a minute, then click Retry.";
+  if (status === 404) return `Gemini model "${model}" was not found for this key (404). Check GEMINI_MODEL.`;
+  if (status === 401 || status === 403) return `Gemini refused the API key (${status}). Check GEMINI_API_KEY in Vercel.`;
+  if (status === 400) return `Gemini rejected the request (400): ${detail || "no detail given"}`;
+  if (status != null && status >= 500) return `Gemini is overloaded or unavailable (${status}) after 4 attempts. Click Retry in a minute.`;
+  if (/timed? ?out|abort/i.test(detail)) return `Gemini took longer than ${TIMEOUT_MS / 1000} s, 4 times. Click Retry.`;
+  return `Gemini could not be reached${detail ? ` (${detail})` : ""}. Click Retry.`;
+}
 
 export async function callGemini<T>(input: CallInput<T>): Promise<CallResult<T>> {
   const model = input.model ?? defaultModel(input.task);
@@ -149,20 +189,14 @@ export async function callGemini<T>(input: CallInput<T>): Promise<CallResult<T>>
           break;
         } catch (err) {
           const status = statusOf(err);
-          const retryable = status === 429 || (status != null && status >= 500) || (err as Error)?.name === "AbortError";
+          // No status = network error or timeout: worth another try, like 429 and 5xx.
+          const retryable = status == null || status === 429 || status >= 500;
           if (retryable && attempt < MAX_TRANSPORT_RETRIES) {
-            await sleep(1000 * 2 ** attempt);
+            await sleep(2000 * 2 ** attempt);
             continue;
           }
           outcome = `error_${status ?? "network"}`;
-          throw new LlmError(
-            status === 429
-              ? "Gemini is rate-limiting requests. Please try again in a minute."
-              : status === 404
-                ? `Gemini model "${model}" was not found for this key. Check GEMINI_MODEL.`
-                : "Gemini did not respond. Please try again.",
-            retryable,
-          );
+          throw new LlmError(geminiErrorMessage(status, model, err), retryable);
         }
       }
       let json: unknown;

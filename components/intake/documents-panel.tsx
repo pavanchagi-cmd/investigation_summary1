@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Trash2, Upload } from "lucide-react";
+import { Loader2, RotateCw, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Select } from "@/components/ui/form";
@@ -117,6 +117,15 @@ export function DocumentsPanel({
     router.refresh();
   }
 
+  async function retry(d: DocumentSummary) {
+    try {
+      await track(api(`/api/documents/${d.id}`, { method: "PATCH", body: { reparse: true } }));
+    } catch (err) {
+      setErrors([`${d.fileName}: ${(err as Error).message}`]);
+    }
+    router.refresh();
+  }
+
   async function changeType(d: DocumentSummary, type: string) {
     await track(api(`/api/documents/${d.id}`, { method: "PATCH", body: { confirmedType: type } }));
     router.refresh();
@@ -215,7 +224,16 @@ export function DocumentsPanel({
                   </option>
                 ))}
               </Select>
-              {d.parseStatus === "failed" && d.parseError ? <p className="mt-2 text-[12.5px] text-risk">{d.parseError}</p> : null}
+              {d.parseStatus === "failed" ? (
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  {d.parseError ? <p className="min-w-0 flex-1 text-[12.5px] text-risk">{d.parseError}</p> : null}
+                  {!readOnly ? (
+                    <Button size="sm" onClick={() => retry(d)} aria-label={`Retry reading ${d.fileName}`}>
+                      <RotateCw /> Retry
+                    </Button>
+                  ) : null}
+                </div>
+              ) : null}
               {docIssues.length > 0 && !d.needsMapping ? (
                 <p className="mt-2 text-[12.5px] text-muted">
                   {docIssues

@@ -5,7 +5,7 @@ import { idParam, route } from "@/lib/http";
 import { generateSummaries } from "@/lib/q5/service";
 
 type Ctx = { params: Promise<{ id: string }> };
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 const Body = z.object({ all: z.boolean().optional() }).default({});
 
